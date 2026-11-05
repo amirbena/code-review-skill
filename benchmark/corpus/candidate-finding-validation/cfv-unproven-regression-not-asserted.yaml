@@ -20,7 +20,7 @@
 #
 # Expected: no finding.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: cfv-unproven-regression-not-asserted
 title: "New async-email flag looks like a flipped default but has no prior-behavior evidence: not a proven regression"
@@ -57,6 +57,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [regression]
   rationale: >-

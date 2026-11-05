@@ -2,14 +2,14 @@
   "name": "code-review-skills",
   "owner": { "name": "amirbena" },
   "metadata": {
-    "description": "Code Review Agent Skills: local-code-review and github-pr-review."
+    "description": "Code Review Agent Skills v3: review-core, eight review-* mini-skills, and the local-code-review and github-pr-review compatibility entrypoints."
   },
   "plugins": [
     {
       "name": "code-review-skills",
       "source": "./",
       "version": "{{version}}",
-      "description": "Local Git and GitHub PR code review Skills with evidence-backed P0/P1/P2 findings."
+      "description": "Read-only code review of local Git changes and GitHub PRs with evidence-backed P0/P1/P2 findings: review-core plus selectable review-* mini-skills."
     }
   ]
 }

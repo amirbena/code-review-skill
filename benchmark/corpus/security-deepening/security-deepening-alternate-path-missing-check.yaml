@@ -8,7 +8,7 @@
 # job is to trace that alternate path and flag the actually-unenforced site
 # rather than the new, already-checked code that prompted the review.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: security-deepening-alternate-path-missing-check
 title: "New admin route adds the authorization check; an older route reaching the same delete helper still has none"
@@ -78,6 +78,8 @@ expected:
       defect_kind: missing-security-test
 
 metadata:
+  skill_set: [review-core, review-security]
+  skill_set_reason: "The missing check is on a second route the diff does not touch; finding it means enumerating every entry point to the privileged helper."
   source: crafted
   tags: [security]
   rationale: >-

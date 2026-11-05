@@ -18,7 +18,7 @@
 # Expected: one required P2 finding classified as a maintainability
 # concern; decision stays clean (no P0/P1 anywhere in the case).
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: cfv-structural-inconsistency-non-blocking
 title: "DiscountRule's field order and naming diverge from the established TaxRule shape with no behavioral consequence: non-blocking"
@@ -74,6 +74,7 @@ expected:
       defect_kind: naming-inconsistency
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

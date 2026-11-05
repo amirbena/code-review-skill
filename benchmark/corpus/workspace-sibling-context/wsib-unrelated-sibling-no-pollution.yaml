@@ -7,7 +7,7 @@
 # injection unrelated to this change; reporting it would be a finding located
 # outside the Review Target.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: wsib-unrelated-sibling-no-pollution
 title: "A README clarification with an unrelated, defective sibling in the workspace"
@@ -55,6 +55,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [no-op]
   rationale: >-

@@ -1,0 +1,71 @@
+# Engineering-design-deepening corpus case (Issue #750, parent #747,
+# depends on #749). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Positive (T1): implementation contradicts an accepted decision present at
+# the pre-image. The ADR is unchanged by the change, so it is accepted.
+
+format: benchmark-case/v2
+
+id: engineering-design-deepening-code-contradicts-accepted-adr
+title: "A code change writes directly to the shared ledger table that an accepted ADR routes through the ledger service"
+
+input:
+  patch: |
+    diff --git a/src/billing/refunds.py b/src/billing/refunds.py
+    index 1111111..2222222 100644
+    --- a/src/billing/refunds.py
+    +++ b/src/billing/refunds.py
+    @@ -1,3 +1,4 @@
+     def refund(order_id, amount):
+    -    ledger_service.post_entry(order_id, -amount)
+    +    db.execute("INSERT INTO ledger_entries (order_id, amount) VALUES (?, ?)",
+    +               (order_id, -amount))
+         notify_customer(order_id)
+  base:
+    src/billing/refunds.py: |
+      def refund(order_id, amount):
+          ledger_service.post_entry(order_id, -amount)
+          notify_customer(order_id)
+    docs/adr/0007-ledger-writes.md: |
+      # ADR 0007: Ledger writes
+
+      Status: Accepted
+
+      ## Decision
+
+      Every write to ledger_entries goes through ledger_service.post_entry.
+      Callers must not insert into the table directly, because the service
+      enforces the double-entry balance check and the audit trail.
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: direct-ledger-insert-violates-accepted-adr
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: src/billing/refunds.py
+        anchor: 'INSERT INTO ledger_entries'
+      claim: >-
+        The refund path now inserts into ledger_entries directly, bypassing
+        ledger_service.post_entry, which accepted ADR 0007 requires for every
+        ledger write because the service enforces the double-entry balance
+        check and the audit trail. Refunds would post unbalanced, unaudited
+        entries. The change does not mention the ADR or supersede it.
+      defect_kind: code-contradicts-accepted-decision
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the accepted-decision constraint (T1): acceptance comes from the
+    unchanged pre-image ADR, the fix location is the implementation, and the
+    impact (unbalanced, unaudited ledger writes) is what makes it P1.
+  taxonomy:
+    capability: [engineering-design]
+    policy_contract: [engineering-design-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

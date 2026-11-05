@@ -7,7 +7,7 @@
 # earlier commit, so the pinned revision must win and the incompatibility is
 # reported.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: external-pinned-revision-precedes-repository-head
 title: "ShipmentState gains held; the pinned shipment-consumer commit is strict while its HEAD is tolerant"
@@ -73,6 +73,7 @@ expected:
       defect_kind: breaking-contract-enum-member-added-exhaustive-consumer
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, regression]
   rationale: >-

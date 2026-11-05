@@ -9,7 +9,7 @@
 # does not require and package.json does not otherwise reference -- an
 # expansion the manifest change does not explain.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: dependency-supply-chain-deepening-transitive-dependency-expansion
 title: "package.json adds one direct dependency (csv-stringify) but package-lock.json adds five unrelated webpack/enzyme packages"
@@ -109,6 +109,8 @@ expected:
       defect_kind: unexplained-transitive-dependency-expansion
 
 metadata:
+  skill_set: [review-core, review-security]
+  skill_set_reason: "Needs lockfile-versus-manifest reasoning to see packages the one new dependency does not explain."
   source: crafted
   tags: [correctness]
   rationale: >-

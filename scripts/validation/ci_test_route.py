@@ -62,16 +62,12 @@ FAST_DROPPED_PREFIXES = (INTEGRATION_PREFIX, *BENCHMARK_PREFIXES)
 BENCHMARK_ROOTS = ("benchmark/", "runtime_platform/benchmark/")
 
 # A docs path is pure only when no file under these roots can read it.
-CONSUMER_ROOTS = ("tests", "scripts", "runtime_platform", "benchmark", "capabilities", "distribution", ".github")
+CONSUMER_ROOTS = ("tests", "scripts", "runtime_platform", "benchmark", "distribution", ".github")
 # Content-agnostic documentation scanners: the whole DOCS-tier test set. They may
 # enumerate docs/ without making every doc "consumed".
 DOCS_SCANNER_MODULES = (
     "tests.policy.governance.test_forbidden_repository_terms",
-    "tests.policy.governance.test_canonical_homes",
-    "tests.policy.governance.test_instruction_architecture",
     "tests.policy.benchmark.test_benchmark_root_migration",
-    "tests.policy.review.test_shared_review_context",
-    "tests.policy.review.presentation.test_senior_voice_contract_231",
 )
 # The router and its own tests name docs paths only as classification fixtures; they read none.
 ROUTER_FILES = (
@@ -84,7 +80,6 @@ ROUTER_FILES = (
 # Tree-guard tests over tests/ (layout and routing tripwires). An explicit
 # registry, added to every PARTIAL set; a missing one fails upward to FULL.
 TREE_GUARD_MODULES = (
-    "tests.repository.test_review_bucket_layout",
     "tests.repository.test_scripts_layout",
     "tests.policy.governance.test_ci_test_routing",
     "tests.unit.governance.test_ci_test_route",
@@ -97,49 +92,36 @@ LINK_VALIDATOR = "scripts/validation/validate-markdown-links.py"
 REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
     {
         "scripts/release/release_lib/gitgh.py",
+        "tests/unit/review/core/test_review_core_contract.py",
+        "tests/unit/review/core/test_depth_skills_contract.py",
+        "tests/unit/review/core/test_review_publish_github_contract.py",
+        "tests/unit/review/core/test_domain_mini_skills_contract.py",
+        "tests/unit/review/core/test_review_runtime_check_contract.py",
         "runtime_platform/benchmark/reference/benchmark_runner.py",
         "runtime_platform/benchmark/scripts/build_benchmark_index.py",
         "runtime_platform/benchmark/scripts/benchmark_run_evidence.py",
         "runtime_platform/benchmark/scripts/benchmark_baseline_summary.py",
-        "runtime_platform/benchmark/scripts/measure_workspace_sibling.py",
-        "runtime_platform/benchmark/scripts/measure_dependency_tree.py",
         "runtime_platform/benchmark/scripts/benchmark_concurrency_workers.py",
         "runtime_platform/benchmark/scripts/run_concurrency_experiment.py",
         "tests/unit/benchmark/test_run_concurrency_experiment.py",
         "tests/unit/benchmark/test_benchmark_baseline_summary.py",
         "scripts/packaging/package_domain/tree.py",
         "scripts/skill_metadata/links.py",
-        "scripts/governance/canonical_homes.py",
         LINK_VALIDATOR,
         "tests/unit/governance/test_validate_markdown_links.py",
         "tests/repository/test_gitignore.py",
-        "tests/unit/review/test_staged_fingerprint.py",
-        "tests/reference/review/workspace_sibling_context.py",
-        "tests/policy/review/test_latency_optimizations_docs.py",
-        "tests/unit/review/findings/test_structured_output_contract.py",
-        "tests/policy/review/presentation/test_github_pr_review_output_tightening_223.py",
-        "tests/policy/review/stacked_pr/test_stacked_pr_review_docs.py",
-        "tests/policy/review/stateful_review/test_reviewed_sha_state_docs.py",
-        "tests/integration/packaging/test_distribution_consumer_install.py",
+        "tests/unit/skill_metadata/test_frontmatter.py",
+        "tests/policy/governance/test_instruction_architecture.py",
         "scripts/release/release_lib/distribution.py",
         "scripts/sandbox/process_exec.py",
         "scripts/sandbox/workspace.py",
         "tests/integration/packaging/_shared.py",
-        "tests/integration/packaging/test_hidden_runtime_dependency.py",
-        "tests/integration/packaging/test_ordinary_packaging_version.py",
-        "tests/integration/packaging/test_skill_tree_output.py",
         "tests/policy/benchmark/test_benchmark_publish_workflow.py",
         "tests/policy/benchmark/test_execution_no_github_writes.py",
-        "tests/policy/review/findings/test_review_result_docs.py",
-        "tests/policy/review/presentation/test_severity_description_option_275.py",
-        "tests/policy/review/test_review_base_policy_wiring.py",
-        "tests/policy/review/test_review_scope_core_wiring.py",
-        "tests/repository/test_review_bucket_layout.py",
         "tests/repository/test_scripts_layout.py",
         "tests/unit/benchmark/test_benchmark_runner.py",
         "tests/unit/benchmark/test_benchmark_runner_multi_repo.py",
         "tests/unit/benchmark/test_benchmark_seal.py",
-        "tests/unit/benchmark/test_workspace_sibling_harness.py",
         "tests/unit/benchmark/test_run_benchmark_routine.py",
         "tests/unit/release/test_distribution.py",
     }
@@ -159,8 +141,8 @@ _GLOBBY = re.compile(r"[*?\[{$<]")
 
 # Generalized documentation (issue #701): closed extension set, and the surfaces that are never plain documentation.
 DOC_EXTENSIONS = (".md",)
-PROTECTED_TOPS = frozenset({"skills", "shared", "policies", ".github", "distribution", "capabilities", "scripts", "tests", "dist"})
-FACT_ONLY_ROOTS = ("skills", "shared", "docs", "policies")
+PROTECTED_TOPS = frozenset({"skills", "policies", ".github", "distribution", "scripts", "tests", "dist"})
+FACT_ONLY_ROOTS = ("skills", "docs", "policies")
 PROTECTED_NAMES = frozenset({"SKILL.md", "AGENTS.md", "CLAUDE.md", "CHANGELOG.md"})
 
 
@@ -207,7 +189,7 @@ class FileFacts:
 
 # Directories a test may legitimately load code from that are not under tests/.
 NON_TEST_ROOTS = frozenset(
-    {"scripts", "runtime_platform", "benchmark", "capabilities", "distribution", "skills", "shared", "docs", ".github", "policies"}
+    {"scripts", "runtime_platform", "benchmark", "distribution", "skills", "docs", ".github", "policies"}
 )
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 _MODULE_ID = re.compile(r"tests(\.[A-Za-z_][A-Za-z0-9_]*)+$")

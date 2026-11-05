@@ -67,8 +67,9 @@ jobs:
       - name: Validate Skill metadata
         if: ${{ steps.route.outputs.tier != 'docs' }}
         run: |
-          python scripts/validation/validate-skill-metadata.py skills/local-code-review --containment-root .
-          python scripts/validation/validate-skill-metadata.py skills/github-pr-review --containment-root .
+          for skill in skills/*/; do
+            python scripts/validation/validate-skill-metadata.py "${skill%/}" --containment-root .
+          done
 
       - name: Build the canonical Skill trees
         if: ${{ steps.route.outputs.tier != 'docs' }}
@@ -80,7 +81,10 @@ jobs:
         # top-level `version`, which the build moves to metadata.version).
         run: |
           python -m pip install "skills-ref==0.1.1"
-          for tree in dist/skills/*/; do agentskills validate "$tree"; done
+          for tree in dist/skills/*/; do
+            [ -d "$tree" ] || continue
+            agentskills validate "$tree"
+          done
 
       - name: Run repository tests
         # FULL unless the router positively selected DOCS, PARTIAL, or FAST.

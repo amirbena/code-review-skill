@@ -7,15 +7,12 @@ docs and ``policies/skill-development-policy.md``.
 
 Module map:
 
-- ``expectations``     — the required-marker / ordering / field tables
-- ``_support``         — generic text assertions and YAML/frontmatter loaders
-- ``links``            — packaged Markdown link containment and resolution
-- ``metadata``         — SKILL.md frontmatter parity, adapters, declared paths
-- ``shared_resources`` — the packaged ``shared/`` templates and policies
-- ``github_family``    — the modular ``github-pr-review`` policy layout
-- ``local_family``     — ``local-code-review`` approval-gate markers
-- ``orchestrator``     — ``validate()`` wiring the checks together
-- ``cli``              — argument parsing
+- ``expectations`` -- the allowed frontmatter fields and forbidden link targets
+- ``_support``     -- generic assertions and YAML/frontmatter loaders
+- ``links``        -- Markdown link containment and resolution
+- ``frontmatter``  -- the SKILL.md frontmatter contract
+- ``orchestrator`` -- ``validate()`` wiring the checks together
+- ``cli``          -- argument parsing
 """
 
 from __future__ import annotations

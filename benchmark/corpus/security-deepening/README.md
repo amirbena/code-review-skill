@@ -7,12 +7,12 @@ tracked by parent Issue
 [#83](https://github.com/amirbena/code-review-skill/issues/83) and its
 own parent, the adaptive specialist-depth composition contract
 [#82](https://github.com/amirbena/code-review-skill/issues/82). This is a
-**focused sub-corpus** of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
+**focused sub-corpus** of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures pinning representative Security deepening outcomes as
 follow-up quality hardening — it validates domain correctness after the
 capability exists and does not define, gate, or redesign it. The
 capability itself is designed and packaged in
-[`../../../shared/policies/security-deepening.md`](../../../shared/policies/security-deepening.md),
+`../../../shared/policies/security-deepening.md`,
 which this corpus's expectations must stay consistent with.
 
 Every case conforms to [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
@@ -29,7 +29,7 @@ reference validator
 
 **One case per outcome shape** #271's scope requires, each isolating that
 shape so a regression in any one is unambiguous. The six cases mirror
-[`security-deepening.md`](../../../shared/policies/security-deepening.md)'s
+`security-deepening.md`'s
 own worked examples and Activation section, and split evenly between
 "the capability engages and finds a real defect" and "the capability
 correctly stays quiet":
@@ -59,7 +59,7 @@ The two `clean` "no engagement" cases above are deliberately distinct:
 the auth-module case fails Activation condition 1 (the domain itself is
 not materially implicated), while the filename-signal case is the
 narrower guard from
-[`specialist-depth.md`](../../../shared/policies/specialist-depth.md)
+`specialist-depth.md`
 that a naming coincidence is a signal, never independently sufficient —
 so a regression that started treating filenames as triggers is caught
 even if base activation logic stayed otherwise correct.

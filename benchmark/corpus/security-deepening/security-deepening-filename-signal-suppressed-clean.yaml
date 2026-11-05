@@ -7,7 +7,7 @@
 # The security-adjacent filename alone must not trigger the deepening
 # capability — a suppressed false positive.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: security-deepening-filename-signal-suppressed-clean
 title: "auth_helper.py reformats a log message string; the filename alone must not trigger deepening"
@@ -44,6 +44,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [security]
   rationale: >-

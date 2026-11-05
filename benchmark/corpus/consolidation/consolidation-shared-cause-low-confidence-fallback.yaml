@@ -20,7 +20,7 @@
 # (#177: "when a shared cause is not confident, emit separate findings
 # rather than over-merging").
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: consolidation-shared-cause-low-confidence-fallback
 title: "Plausibly shared timezone cause with low confidence falls back to separate findings"
@@ -98,6 +98,7 @@ expected:
       defect_kind: naive-datetime
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

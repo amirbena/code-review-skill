@@ -1,0 +1,86 @@
+# External contract context corpus case (Issue #133). Format:
+# ../../../runtime_platform/benchmark/fixture-format.md `input.external_contexts`.
+#
+# shipment-consumer has two commits. The pinned commit's consumer has an
+# exhaustive switch; the repository's HEAD (a later commit) tolerates unknown
+# states. A review that reads HEAD would find nothing; the caller pinned the
+# earlier commit, so the pinned revision must win and the incompatibility is
+# reported.
+
+format: benchmark-case/v2
+
+id: external-pinned-revision-precedes-repository-head
+title: "ShipmentState gains held; the pinned shipment-consumer commit is strict while its HEAD is tolerant"
+
+input:
+  patch: |
+    diff --git a/schemas/shipment_state.schema.json b/schemas/shipment_state.schema.json
+    --- a/schemas/shipment_state.schema.json
+    +++ b/schemas/shipment_state.schema.json
+    @@ -2,5 +2,5 @@
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "ShipmentState",
+       "type": "string",
+    -  "enum": ["created", "in_transit", "delivered"]
+    +  "enum": ["created", "in_transit", "delivered", "held"]
+     }
+  base:
+    schemas/shipment_state.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ShipmentState",
+        "type": "string",
+        "enum": ["created", "in_transit", "delivered"]
+      }
+  external_contexts:
+    shipment-consumer:
+      files:
+        tracking/render_state.py: |
+          LABELS = {"created": "Created", "in_transit": "On the way", "delivered": "Delivered"}
+
+
+          def render_state(state):
+              return LABELS[state]
+      head_files:
+        tracking/render_state.py: |
+          LABELS = {"created": "Created", "in_transit": "On the way", "delivered": "Delivered"}
+
+
+          def render_state(state):
+              return LABELS.get(state, "Unknown")
+  context: >-
+    shipment-consumer is supplied at the earlier pinned commit; its later HEAD
+    differs and is never the evidence.
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: shipment-state-held-breaks-pinned-consumer
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: schemas/shipment_state.schema.json
+        symbol: ShipmentState
+        anchor: '"enum": ["created", "in_transit", "delivered", "held"]'
+      claim: >-
+        ShipmentState gains a held member, and at the caller-pinned
+        shipment-consumer revision render_state indexes a closed LABELS map
+        directly, so it raises KeyError for held. The repository's later HEAD
+        tolerates unknown states, but the pinned revision, not HEAD, is the
+        evidence. The finding is located at the schema change.
+      defect_kind: breaking-contract-enum-member-added-exhaustive-consumer
+
+metadata:
+  source: crafted
+  tags: [correctness, regression]
+  rationale: >-
+    Issue #133 scenario 3: the pinned revision takes precedence over a
+    different repository HEAD. The expected finding exists only if the pinned
+    commit, not HEAD or the working tree, was read.
+  taxonomy:
+    capability: [external-contract-context]
+    policy_contract: [external-contract-context]
+    risk_mode: [correctness, regression]
+    affected_surface: [benchmark-corpus-or-tooling]

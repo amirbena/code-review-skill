@@ -4,7 +4,7 @@ Canonical rules for the **content of agent-authored GitHub Issues and Pull
 Requests** for this repository — how much detail belongs in the
 GitHub-visible body, and what belongs in a linked document instead.
 
-This is a repository-development policy. It is **not** packaged into either
+This is a repository-development policy. It is **not** packaged into any
 Skill archive, and no packaged Skill resource may depend on it. It governs
 the body an agent writes for an Issue or PR here. It does not
 change the Issue Form fields in

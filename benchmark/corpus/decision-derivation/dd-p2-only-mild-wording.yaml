@@ -8,7 +8,7 @@
 # control case for the reverse-direction proof: a P2-only finding set must
 # render REVIEW CLEAN, never CHANGES REQUIRED.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: dd-p2-only-mild-wording
 title: "New export_page duplicates the DEFAULT_PAGE_SIZE literal instead of reusing it"
@@ -54,6 +54,7 @@ expected:
       defect_kind: duplicated-constant
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

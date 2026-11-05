@@ -7,12 +7,12 @@ implemented by Issue
 [#180](https://github.com/amirbena/code-review-skill/issues/180) and its
 own parent, the adaptive specialist-depth composition contract
 [#82](https://github.com/amirbena/code-review-skill/issues/82). This is a
-**focused sub-corpus** of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
+**focused sub-corpus** of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures pinning representative Performance deepening outcomes as
 follow-up quality hardening — it validates domain correctness after the
 capability exists and does not define, gate, or redesign it. The
 capability itself is designed and packaged in
-[`../../../shared/policies/performance-deepening.md`](../../../shared/policies/performance-deepening.md),
+`../../../shared/policies/performance-deepening.md`,
 which this corpus's expectations must stay consistent with.
 
 Every case conforms to [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
@@ -32,7 +32,7 @@ examples.
 
 **One case per outcome shape** Issue #187's scope requires, each isolating
 that shape so a regression in any one is unambiguous. The six cases mirror
-[`performance-deepening.md`](../../../shared/policies/performance-deepening.md)'s
+`performance-deepening.md`'s
 own worked examples and concern areas, and split between "the capability
 engages and finds a real cost defect" and "the capability correctly stays
 quiet":

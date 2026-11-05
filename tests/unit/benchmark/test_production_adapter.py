@@ -493,30 +493,6 @@ class ParseRenderedOutcomeTests(unittest.TestCase):
 
 
 
-class StructuredReviewResultBoundaryTests(unittest.TestCase):
-    """#71 audit: the benchmark scores only the Markdown report; the opt-in
-    structured result (#69) stays off and cannot leak into parsed findings."""
-
-    SAMPLE = (
-        Path(__file__).resolve().parents[1]
-        / "review" / "findings" / "structured_output_samples"
-        / "local-code-review" / "blocking-committed.md"
-    )
-
-    def test_benchmark_prompt_leaves_the_structured_result_off(self) -> None:
-        from runtime_platform.benchmark.scripts.benchmark_review_adapter import _REVIEW_PROMPT
-        from tests.reference.review.invocation_options import OPTION_CONCEPTS, normalize
-
-        resolved = normalize(_REVIEW_PROMPT, defaults=dict.fromkeys(OPTION_CONCEPTS, False))
-        self.assertIs(resolved["structured_review_result"], False)
-
-    def test_appended_structured_result_does_not_change_parsed_output(self) -> None:
-        text = self.SAMPLE.read_text(encoding="utf-8")
-        report_only = text.split("### Structured Review Result", 1)[0]
-        self.assertEqual(parse_review_output(text), parse_review_output(report_only))
-        self.assertEqual(parse_rendered_outcome(text), parse_rendered_outcome(report_only))
-        self.assertEqual([f.severity for f in parse_review_output(text)], ["P1", "P1", "P2"])
-
 class _StubCliMixin:
     """Writes an executable stub script standing in for the real `claude`
     CLI, so the subprocess-invocation boundary is tested without depending
@@ -680,7 +656,7 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
         plugin_path = Path(plugin_dir)
         self.assertTrue(plugin_path.is_absolute())
         self.assertEqual(plugin_path, SKILL_PLUGIN_DIR)
-        self.assertTrue((plugin_path / "skills" / "local-code-review").is_dir())
+        self.assertTrue((plugin_path / "skills").is_dir())
 
     def test_adapter_raised_exception_is_absorbed_by_run_case_as_per_case_error(self) -> None:
         """Proves the integration point: an adapter failure (subprocess
@@ -699,7 +675,7 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
 
         case = bf.parse_case(
             {
-                "format": "benchmark-case/v2",
+                "format": "benchmark-case/v3",
                 "id": "stub-failure-case",
                 "title": "stub",
                 "input": {
@@ -708,6 +684,7 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
                 },
                 "expected": {"findings": []},
                 "metadata": {
+                    "skill_set": ["review-core"],
                     "taxonomy": {
                         "capability": ["unclassified"],
                         "policy_contract": ["unclassified"],

@@ -8,7 +8,7 @@
 # where, and at which revision; it is never evidence that nothing consumes the
 # event, and no finding follows.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: wsib-absence-in-inspected-sibling-no-claim
 title: "payment-service catalogs a new refunded event; the inspected sibling never subscribes to it"
@@ -52,6 +52,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

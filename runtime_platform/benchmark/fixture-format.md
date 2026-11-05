@@ -11,8 +11,8 @@ against, so review-quality results compare across runs instead of drifting
 with an ad-hoc format. Parent capability:
 [#40](https://github.com/amirbena/code-review-skill/issues/40).
 
-Like [`../../docs/findings/`](../../docs/findings/README.md) and
-[`../../docs/runtime-parallelism.md`](../../docs/runtime-parallelism.md), this is a
+Like `../../docs/findings/` and
+`../../docs/runtime-parallelism.md`, this is a
 repository-development doc: **not** packaged into either Skill archive, and
 no packaged Skill resource depends on it. It reuses the shared review
 vocabulary — it does not define a parallel review model.
@@ -30,27 +30,27 @@ concerns owned elsewhere (see §13).
 ## 1. Terminology and ownership
 
 - **Finding** — one actionable review result in the shared shape of
-  [`../../shared/templates/finding.md`](../../shared/templates/finding.md).
+  `../../shared/templates/finding.md`.
   This contract references that shape; it does not redefine a finding.
 - **Severity** — exactly one of `P0` / `P1` / `P2`, defined by
-  [`../../shared/policies/severity.md`](../../shared/policies/severity.md).
+  `../../shared/policies/severity.md`.
   A fixture states an *expected* severity per finding; it does not restate
   the P0/P1/P2 definitions.
 - **Decision** — the mechanical `clean` / `changes-required` outcome that
-  [`../../shared/policies/severity.md`](../../shared/policies/severity.md),
+  `../../shared/policies/severity.md`,
   "Decision derivation (mechanical)," derives from a finalized finding set.
   `clean` is that policy's `REVIEW CLEAN` / `Approve`; `changes-required`
   is its `CHANGES REQUIRED` / `Request Changes`. The tokens are
   Skill-neutral because a benchmark case is Skill-neutral.
 - **`location_intent`** — the closed scope enum
   `line` / `symbol` / `file` / `cross-file` / `repository`, reused verbatim
-  from [`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)
+  from `../../docs/findings/finding-matching-strategy.md`
   §2 (the finding-matching descriptor). A fixture's expected locations are
   expressed with it so the corpus and any later benchmark
   expected-vs-produced matcher share one location model.
 - **`MATCH` / `NO MATCH` / `AMBIGUOUS` vocabulary** — the three-valued
   match result described in
-  [`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md).
+  `../../docs/findings/finding-matching-strategy.md`.
   That document is **completed stateful-re-review finding-*identity*
   research** (GitHub Issue
   [#59](https://github.com/amirbena/code-review-skill/issues/59), closed):
@@ -95,11 +95,11 @@ worked example need.
 Every fixture carries an explicit format identifier:
 
 ```yaml
-format: benchmark-case/v2
+format: benchmark-case/v3
 ```
 
 - `format` is `benchmark-case/v<major>`. This document currently defines
-  `v2` (see "Version history" below for `v1`).
+  `v3` (see "Version history" below for `v1` and `v2`).
 - A reader implements a **fixed set** of major versions. Encountering any
   other value — absent, malformed, or a version it does not implement — is
   a hard rejection (§11). A reader MUST NOT parse an unrecognized version
@@ -119,13 +119,25 @@ format: benchmark-case/v2
 | Version | Status | What changed |
 |---|---|---|
 | `v1` | Superseded | The original schema (#50). `metadata` was optional; no taxonomy classification existed. |
-| `v2` | Current | [#333](https://github.com/amirbena/code-review-skill/issues/333): `metadata` became **required**, and `metadata.taxonomy` became a **required** field within it (§10.1) — a breaking change to a field's requiredness under the rule above, hence the major-version increment. Every corpus fixture and the worked example were migrated to `v2` in the same change that introduced the requirement, so no `v1` fixture was left behind. [#558](https://github.com/amirbena/code-review-skill/issues/558) later added `input.repositories` / `input.unadmitted_repositories` (§6.4) and `location.repo_alias` (§8.3) as a purely additive extension within `v2`: every fixture valid before #558 stays valid and unchanged, since the new input kind and location field are both optional and mutually exclusive with the pre-existing shapes. |
+| `v2` | Superseded, frozen | [#333](https://github.com/amirbena/code-review-skill/issues/333): `metadata` became **required**, and `metadata.taxonomy` became a **required** field within it (§10.1) — a breaking change to a field's requiredness under the rule above, hence the major-version increment. Every corpus fixture and the worked example were migrated to `v2` in the same change that introduced the requirement, so no `v1` fixture was left behind. [#558](https://github.com/amirbena/code-review-skill/issues/558) later added `input.repositories` / `input.unadmitted_repositories` (§6.4) and `location.repo_alias` (§8.3) as a purely additive extension within `v2`: every fixture valid before #558 stays valid and unchanged, since the new input kind and location field are both optional and mutually exclusive with the pre-existing shapes. Superseded by `v3`; its fixtures are kept byte-identical in the frozen epoch `benchmark/corpus-v2/` (see "The frozen v2 epoch" below). |
+| `v3` | Current | [#848](https://github.com/amirbena/code-review-skill/issues/848): `metadata.skill_set` became **required** (§10.2), and `metadata.skill_set_reason` is required exactly when the set includes a mini-skill — a breaking change to a field's requiredness, hence the major-version increment. The active corpus and the worked example were migrated to `v3` in the same change. No other field changed. |
 
 The reference validator
 ([`reference/benchmark_fixture.py`](reference/benchmark_fixture.py))
-implements `v2` only — per "Fail closed" above, a `v1` fixture is rejected
-under §11 rule 1, never reinterpreted under `v2`'s rules. `v1` is recorded
+implements `v3` only by default — per "Fail closed" above, a `v1` or `v2`
+fixture is rejected under §11 rule 1, never reinterpreted under `v3`'s rules. `v1` is recorded
 here as history, not as a version a current reader accepts.
+
+### The frozen v2 epoch
+
+Historical experiments and sealed records pin `v2` fixtures by byte digest
+(the concurrency-campaign subset, the dependency-tree pre-registration and the
+pre-#688 sentinel snapshot). Those bytes are immutable evidence, so
+[`../../benchmark/corpus-v2/`](../../benchmark/corpus-v2/README.md) keeps the
+original `v2` corpus unchanged and the active corpus (`benchmark/corpus/`) is
+migrated to `v3`. The epoch is read only by an explicit
+`parse_case(..., legacy=True)` or by pointing `--corpus-dir` at it; it is never
+part of an active lane, and the `v2` reader does not require `skill_set`.
 
 ## 4. Top-level fields
 
@@ -192,7 +204,7 @@ shape of both so the corpus is not blocked on that choice.
 
 Optional free-form string passed to the reviewer as review context
 (requirements, ticket text, an ADR excerpt), mirroring
-[`../../shared/policies/review-context.md`](../../shared/policies/review-context.md).
+`../../shared/policies/review-context.md`.
 Present only for cases that deliberately test context-aware review.
 
 ### 6.4 Multi-repository Review Target (`repositories`) — Issue #558
@@ -214,7 +226,7 @@ A mapping of `<alias>` (kebab-case, like `id`) to that member's own entry:
   `repo_ref` keys, and with a top-level `base` (a member's own `base`
   belongs inside its own entry, never beside `repositories`).
 - Mirrors
-  [`../../skills/local-code-review/policies/multi-repository-review-target.md`](../../skills/local-code-review/policies/multi-repository-review-target.md)'s
+  `../../skills/local-code-review/policies/multi-repository-review-target.md`'s
   explicit-root-list input contract: each alias materializes as its own
   independent Git repository (a runner never invents a synthetic shared
   base/SHA across members — see [`runner-contract.md`](runner-contract.md)),
@@ -245,7 +257,7 @@ is read-only compatibility evidence, never a Review Target member:
 A runner materializes each entry as its own Git repository outside the
 Review Target workspace and passes only designated entries to the reviewer
 adapter, as `(path, revision)` and nothing else. See
-[`../../skills/local-code-review/policies/external-contract-context.md`](../../skills/local-code-review/policies/external-contract-context.md).
+`../../skills/local-code-review/policies/external-contract-context.md`.
 
 ### 6.6 Workspace siblings (`workspace_siblings`) — Issue #664
 
@@ -263,15 +275,15 @@ workspace root, outside the Review Target, and passes that root to the
 reviewer adapter as `workspace_root`. Whether the adapter *forwards* the
 root is the caller's choice, never the fixture's, so a capability-on and a
 capability-off arm see identical disk state. See
-[`workspace-sibling-context-measurement.md`](workspace-sibling-context-measurement.md)
+`workspace-sibling-context-measurement.md`
 and
-[`../../shared/policies/workspace-sibling-context.md`](../../shared/policies/workspace-sibling-context.md).
+`../../shared/policies/workspace-sibling-context.md`.
 
 ### 6.7 Dependency trees (`dependency_trees`) — Issue #732
 
 Optional, valid only alongside `patch`. Synthetic dependency-tree text for
 Base and Head, carried so the opt-in inspection in
-[`../../shared/policies/dependency-tree-inspection.md`](../../shared/policies/dependency-tree-inspection.md)
+`../../shared/policies/dependency-tree-inspection.md`
 can be benchmarked with no build, plugin, or network:
 
 | Field | Required | Meaning |
@@ -290,7 +302,7 @@ the `dependency_trees` keyword, only for a case that declares the input. In
 workspace and states a fixture-local `cat` command as the approved command, so
 the benchmark runs through the existing execution mechanism but never a real
 build. The validator never executes anything. See
-[`dependency-tree-inspection-measurement.md`](dependency-tree-inspection-measurement.md).
+`dependency-tree-inspection-measurement.md`.
 
 ## 7. Expected outcome (`expected`)
 
@@ -305,7 +317,7 @@ build. The validator never executes anything. See
 `decision` is **derivable** from the required findings' severities and is
 therefore optional. When present it is an explicit cross-check and MUST be
 consistent with the mechanical derivation in
-[`../../shared/policies/severity.md`](../../shared/policies/severity.md): a
+`../../shared/policies/severity.md`: a
 case has `changes-required` exactly when at least one **required** finding
 (§8) can only be satisfied at `P0`/`P1`; otherwise `clean`. Optional
 findings never affect it. An inconsistent `decision` is a rejection (§11).
@@ -328,7 +340,7 @@ Additional fields:
 |---|---|---|
 | `severity` | yes | `P0`/`P1`/`P2`, **or** a list of ≥ 2 distinct such values to permit severity variance (§9). |
 | `location` | yes | Structured expected location (§8.3). |
-| `claim` | yes | A short normalized cause → faulty-behavior sentence (the `behavioral_claim` shape of [`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md) §2). Documentation and a future-matcher target; **not** string-equality matched. |
+| `claim` | yes | A short normalized cause → faulty-behavior sentence (the `behavioral_claim` shape of `../../docs/findings/finding-matching-strategy.md` §2). Documentation and a future-matcher target; **not** string-equality matched. |
 | `defect_kind` | no | Narrow defect-class slug (e.g. `sql-injection`). Concrete purpose: category-level slicing for #41 / profile fixtures #47. |
 | `alternatives` | no | Non-empty list of acceptable **restatements of this same defect** (§8.2). |
 
@@ -352,7 +364,7 @@ carries its own `match` (§8.4).
 | `path` | yes unless `location_intent` is `repository` | Repo-relative POSIX path. |
 | `symbol` | no | Enclosing qualified symbol, when known. |
 | `anchor` | no | A short verbatim substring of the post-image at/near the defect site. This is the measurable hook: the benchmark expected-vs-produced matcher ([`match-criteria.md`](match-criteria.md), #54) checks that a reviewer's reported location resolves to code containing `anchor` within the proximity window, **without** this contract implementing matching. |
-| `lines` | no | `{ start, end }` (1-based, `start ≤ end`) in the **post-image**. **Advisory only** — never the binding identity, because line numbers move (see [`../../docs/findings/finding-identity-requirements.md`](../../docs/findings/finding-identity-requirements.md) §4.3). |
+| `lines` | no | `{ start, end }` (1-based, `start ≤ end`) in the **post-image**. **Advisory only** — never the binding identity, because line numbers move (see `../../docs/findings/finding-identity-requirements.md` §4.3). |
 | `repo_alias` | required iff `input.repositories` is present, forbidden otherwise | Which `input.repositories` member this finding belongs to (Issue #558). Cross-checked against the case's own `repositories` aliases — a `repo_alias` naming an unadmitted or nonexistent alias is a rejection (§11), which is itself part of the isolation/authorization negative case's structural proof: an unadmitted sibling's alias can never even be written into an expected finding. |
 
 ### 8.4 `any_of` group — genuinely alternative acceptable findings
@@ -428,6 +440,8 @@ downstream purpose. Unknown keys are rejected (§11).
 | `tags` | no | list | Subset of `correctness` / `security` / `quality` / `no-op` / `regression` / `concurrency` / `performance`, no duplicates. Category slices for #41 and profile/risky fixtures (#47/#48). |
 | `rationale` | no | string | 1–3 sentences on why this case earns a corpus slot. Feeds #51's case-selection rationale record. |
 | `taxonomy` | **yes** | mapping | Canonical candidate-taxonomy classification (§10.1). Issue #333. |
+| `skill_set` | **yes** | list | The v3 skill set the case runs with (§10.2). Issue #848. |
+| `skill_set_reason` | iff `skill_set` has a mini-skill | string | Why the Core alone is not enough for this case (§10.2). |
 
 No field for scoring weights, pass/fail thresholds, retrieval cutoffs,
 runner configuration, timing, or model identity — those are out of scope
@@ -465,6 +479,25 @@ dimensions, their canonical values, and the deterministic inverted index
 built from them are specified in full in
 [`taxonomy.md`](taxonomy.md) — this document only pins the metadata shape
 and its fail-closed validation (§11 rule 10).
+
+### 10.2 `metadata.skill_set` — the skills a case runs with
+
+Issue [#848](https://github.com/amirbena/code-review-skill/issues/848). A
+non-empty list of unique skill names that **starts with `review-core`**. The
+other values are the mini-skills `review-backend`, `review-deep-investigation`,
+`review-frontend`, `review-publish-github`, `review-requirements`,
+`review-runtime-check`, `review-security` and `review-suggestions`.
+
+- `[review-core]` is a **Core-only** case: the Core alone must produce the
+  expected outcome. A P0/P1 case whose defect is visible in the diff is
+  Core-only.
+- A set with a mini-skill is a **mini-skill case**. `skill_set_reason` is
+  required and states why the Core alone is not enough (for example, "the
+  missing check is on a route the diff does not touch"). Core-only cases must
+  not carry one.
+
+The fixture only declares the set; how a runner provisions the skills and how
+Core-only versus mini-skill results are scored are downstream concerns (§13).
 
 ## 11. Fail-closed validation
 
@@ -518,15 +551,18 @@ authoritative; this list is not exhaustive.
     and a finding's `location` carries no `repo_alias` at all; or
     `input.repositories` is absent and a finding's `location` carries a
     `repo_alias` (§8.3).
+13. `metadata.skill_set` is missing, empty, not a list, carries an unknown or
+    duplicate skill, does not start with `review-core`; or a mini-skill set
+    has no `skill_set_reason`, or a Core-only set carries one (§10.2).
 
-A validator that implements `v2` and is handed a `v1` fixture rejects it
+A validator that implements `v3` and is handed a `v2` fixture rejects it
 under rule 1 — it never falls back to `v1` parsing (see "Version history"
 in §3).
 
 ## 12. Worked example
 
 [`../../benchmark/examples/example-case.yaml`](../../benchmark/examples/example-case.yaml) is a complete,
-validated `benchmark-case/v2` fixture. It is a crafted single-file Python
+validated `benchmark-case/v3` fixture. It is a crafted single-file Python
 patch that introduces a SQL-injection sink and a user-controlled
 filesystem path and adds no tests. It exercises every §9 construct:
 
@@ -562,8 +598,8 @@ exercising the test-only reference validator
 | Profile-specific and risky-change fixture selection | [#47](https://github.com/amirbena/code-review-skill/issues/47) / [#48](https://github.com/amirbena/code-review-skill/issues/48) |
 | The canonical taxonomy's dimensions/values, PR-diff classification, and the inverted index built from `metadata.taxonomy` | [#333](https://github.com/amirbena/code-review-skill/issues/333) — [`taxonomy.md`](taxonomy.md) |
 | Case relevance scoring, weighting, and Top-K/coverage selection over the taxonomy/index | [#334](https://github.com/amirbena/code-review-skill/issues/334) |
-| The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
-| The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
+| The P0/P1/P2 definitions and the decision derivation | `../../shared/policies/severity.md` |
+| The finding field shape | `../../shared/templates/finding.md` |
 
 **On the benchmark matcher.** The benchmark *expected-vs-produced* match
 relation — deciding when a produced finding satisfies an expected spec, an
@@ -578,7 +614,7 @@ benchmark surface those sit on. GitHub Issue
 [#59](https://github.com/amirbena/code-review-skill/issues/59) is **closed
 stateful-re-review finding-*identity* research** and is **not** the owner
 of benchmark *expected-vs-produced* matching;
-[`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)
+`../../docs/findings/finding-matching-strategy.md`
 is referenced by this contract and by `match-criteria.md` only as reusable
 prior-art vocabulary (`MATCH` / `NO MATCH` / `AMBIGUOUS`) and matching
 discipline (defect-continuity + site-continuity), never as benchmark
@@ -591,7 +627,7 @@ format until a later issue installs an equivalent schema alongside the
 runner (#52) or in another canonical home. At that point this document
 becomes the design record: it MUST link to the canonical schema and MUST
 NOT keep evolving the format independently — exactly as
-[`../../docs/findings/finding-identity-requirements.md`](../../docs/findings/finding-identity-requirements.md)
+`../../docs/findings/finding-identity-requirements.md`
 describes for its own eventual installation.
 
 The test-only reference validator

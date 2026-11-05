@@ -6,12 +6,12 @@ deterministic fixture corpus for the Engineering Design Review capability
 delivered by [#749](https://github.com/amirbena/code-review-skill/issues/749)
 under parent [#747](https://github.com/amirbena/code-review-skill/issues/747).
 It is a **focused sub-corpus** of
-[`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
+[`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures: functional and regression validation, not measurement. The
 capability is specified in
-[`../../../shared/policies/engineering-design-deepening.md`](../../../shared/policies/engineering-design-deepening.md)
+`../../../shared/policies/engineering-design-deepening.md`
 and designed in
-[`../../../docs/engineering-design-review/engineering-design-review-contract.md`](../../../docs/engineering-design-review/engineering-design-review-contract.md)
+`../../../docs/engineering-design-review/engineering-design-review-contract.md`
 (§7.3, §8, §17); the expectations here must stay consistent with both.
 
 Every case is a self-contained inline `patch` plus its `base` pre-image, so
@@ -68,7 +68,7 @@ its impact is real.
   comprehensive-lane run, which discovers this directory automatically; file
   a focused follow-up for any genuine defect it surfaces.
 - **Context gaps and the Reasoning check are not directly assertable.**
-  `benchmark-case/v2` has no key for an expected Context gap or Reasoning
+  `benchmark-case/v3` has no key for an expected Context gap or Reasoning
   check. The missing-information case pins the observable part (no finding);
   that no Context gap is emitted for missing information, and that Context
   gaps and the Reasoning check are unchanged, is asserted by the policy tests

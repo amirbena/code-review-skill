@@ -3,7 +3,7 @@
 
 Test-only: not runtime logic, not packaged — the packaged Skills are
 Markdown/YAML only. This module mirrors
-``runtime_platform/benchmark/fixture-format.md``: the ``benchmark-case/v2`` schema for a
+``runtime_platform/benchmark/fixture-format.md``: the ``benchmark-case/v3`` schema for a
 single benchmark case, its required/optional fields, the four typed variance
 constructs, and the fail-closed validation rules. It is a *parser and
 validator*, not a matcher and not a runner — Issue #52 owns the real parser,
@@ -28,13 +28,36 @@ from runtime_platform.benchmark.reference import benchmark_taxonomy as tax
 # one (fail-closed, runtime_platform/benchmark/fixture-format.md §3).
 # --------------------------------------------------------------------------
 
-# v2 (Issue #333): metadata.taxonomy became a required field, a breaking
-# requiredness change per fixture-format.md §3 — the major version bumped
-# accordingly. v1 (no mandatory taxonomy) is superseded, not dual-read:
-# every corpus fixture was migrated to v2 in the same change that
-# introduced the requirement, so there is no live v1 fixture left to
-# support, and this reference validator implements v2 only.
-SUPPORTED_FORMATS: frozenset[str] = frozenset({"benchmark-case/v2"})
+# v2 (Issue #333): metadata.taxonomy became a required field. v3 (Issue
+# #848): metadata.skill_set became a required field, again a breaking
+# requiredness change per fixture-format.md §3. Earlier versions are
+# superseded, not dual-read: every corpus fixture was migrated in the same
+# change that introduced the requirement, so this reference validator
+# implements v3 only.
+SUPPORTED_FORMATS: frozenset[str] = frozenset({"benchmark-case/v3"})
+
+# The frozen v2 epoch (benchmark/corpus-v2/): immutable inputs that historical
+# experiments and sealed records pin by byte digest. It is read only on an
+# explicit ``parse_case(..., legacy=True)``; the default stays fail-closed.
+LEGACY_FORMATS: frozenset[str] = frozenset({"benchmark-case/v2"})
+
+# The v3 skill set a case runs with (Issue #848): the Core plus the explicit
+# mini-skills. `review-core` is always present; a case never runs a
+# mini-skill without it.
+CORE_SKILL = "review-core"
+MINI_SKILLS: frozenset[str] = frozenset(
+    {
+        "review-backend",
+        "review-deep-investigation",
+        "review-frontend",
+        "review-publish-github",
+        "review-requirements",
+        "review-runtime-check",
+        "review-security",
+        "review-suggestions",
+    }
+)
+SKILL_SET_VALUES: frozenset[str] = MINI_SKILLS | {CORE_SKILL}
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -53,7 +76,9 @@ COMPLETENESS: frozenset[str] = frozenset({"exhaustive", "at-least"})
 MATCH_KINDS: frozenset[str] = frozenset({"required", "optional"})
 
 # `metadata` is a closed map: every key has a concrete downstream purpose.
-METADATA_KEYS: frozenset[str] = frozenset({"source", "tags", "rationale", "taxonomy"})
+METADATA_KEYS: frozenset[str] = frozenset(
+    {"source", "tags", "rationale", "taxonomy", "skill_set", "skill_set_reason"}
+)
 METADATA_TAGS: frozenset[str] = frozenset(
     {
         "correctness",
@@ -609,7 +634,40 @@ def _parse_input(raw: Any) -> dict[str, Any]:
     return raw
 
 
-def _parse_metadata(raw: Any) -> dict[str, Any]:
+def _parse_skill_set(raw: dict[str, Any]) -> None:
+    _require(
+        "skill_set" in raw,
+        "metadata.skill_set: is required (Issue #848 — every case declares "
+        "the skill set it runs with)",
+    )
+    skills = raw["skill_set"]
+    _require(
+        isinstance(skills, list) and bool(skills),
+        "metadata.skill_set: must be a non-empty list",
+    )
+    bad = sorted(str(k) for k in skills if k not in SKILL_SET_VALUES)
+    _require(not bad, f"metadata.skill_set: unknown skill(s) {bad}")
+    _require(len(set(skills)) == len(skills), "metadata.skill_set: duplicate skill")
+    _require(
+        skills[0] == CORE_SKILL,
+        f"metadata.skill_set: must start with {CORE_SKILL!r} (a mini-skill "
+        "never runs without the Core)",
+    )
+    if len(skills) == 1:
+        _require(
+            "skill_set_reason" not in raw,
+            "metadata.skill_set_reason: only valid for a case that runs a mini-skill",
+        )
+    else:
+        _require(
+            isinstance(raw.get("skill_set_reason"), str)
+            and raw["skill_set_reason"].strip() != "",
+            "metadata.skill_set_reason: a non-empty reason is required when "
+            "skill_set includes a mini-skill (why the Core alone is not enough)",
+        )
+
+
+def _parse_metadata(raw: Any, *, require_skill_set: bool = True) -> dict[str, Any]:
     _require(isinstance(raw, dict), "metadata: must be a mapping")
     _no_unknown_keys(raw, METADATA_KEYS, "metadata")
     _require(
@@ -621,6 +679,8 @@ def _parse_metadata(raw: Any) -> dict[str, Any]:
         tax.validate_taxonomy(raw["taxonomy"])
     except tax.TaxonomyError as exc:
         raise FixtureFormatError(f"metadata.{exc}") from exc
+    if require_skill_set:
+        _parse_skill_set(raw)
     if "source" in raw:
         _require(
             isinstance(raw["source"], str) and raw["source"].strip() != "",
@@ -659,7 +719,7 @@ def _all_locations(findings: Sequence["ExpectedFinding"]) -> list[dict[str, Any]
     return locs
 
 
-def parse_case(data: Any) -> BenchmarkCase:
+def parse_case(data: Any, *, legacy: bool = False) -> BenchmarkCase:
     """Validate ``data`` (already YAML/JSON-decoded) as one benchmark case.
 
     Returns a :class:`BenchmarkCase` or raises :class:`FixtureFormatError`.
@@ -670,9 +730,9 @@ def parse_case(data: Any) -> BenchmarkCase:
 
     fmt = data.get("format")
     _require(
-        isinstance(fmt, str) and fmt in SUPPORTED_FORMATS,
+        isinstance(fmt, str) and fmt in (SUPPORTED_FORMATS | (LEGACY_FORMATS if legacy else frozenset())),
         f"fixture: unsupported or missing 'format' {fmt!r}; "
-        f"this validator implements {sorted(SUPPORTED_FORMATS)}",
+        f"this validator implements {sorted(SUPPORTED_FORMATS | (LEGACY_FORMATS if legacy else frozenset()))}",
     )
     _no_unknown_keys(data, _TOP_LEVEL_KEYS, "fixture")
 
@@ -758,7 +818,7 @@ def parse_case(data: Any) -> BenchmarkCase:
         "fixture: 'metadata' is required (Issue #333 — every case carries "
         "taxonomy metadata)",
     )
-    metadata = _parse_metadata(data["metadata"])
+    metadata = _parse_metadata(data["metadata"], require_skill_set=fmt not in LEGACY_FORMATS)
 
     case = BenchmarkCase(
         format=fmt,

@@ -5,7 +5,7 @@
 # Negative: a typo-only edit to an accepted ADR changes no decision and
 # does not activate the capability.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: engineering-design-deepening-typo-only-adr-edit-inert-clean
 title: "A change fixes a spelling error in an accepted ADR and changes no decision"
@@ -41,6 +41,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [no-op]
   rationale: >-

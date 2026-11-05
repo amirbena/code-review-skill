@@ -344,7 +344,7 @@ class PreImageTests(unittest.TestCase):
     evidence of the reviewed change, not fabrication (review F1, re-review)."""
 
     DELETE_CASE = bf.BenchmarkCase(
-        format="benchmark-case/v2",
+        format="benchmark-case/v3",
         id="deletes-old",
         title="t",
         input={

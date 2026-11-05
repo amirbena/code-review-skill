@@ -43,9 +43,9 @@ score.
   [`../../docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md), "Automatic execution of PR
   code."
 - **Produced finding** — one reviewer result in the shared shape of
-  [`../../shared/templates/finding.md`](../../shared/templates/finding.md),
+  `../../shared/templates/finding.md`,
   carrying at least a severity (`P0` / `P1` / `P2`,
-  [`../../shared/policies/severity.md`](../../shared/policies/severity.md))
+  `../../shared/policies/severity.md`)
   and a location. The runner records produced findings verbatim; it does
   **not** classify, dedupe, or match them.
 - **Case result** — the machine-readable per-case record the runner emits
@@ -237,8 +237,8 @@ the per-case result, but the **match relation itself**
 | Verified Skill-under-test provisioning/binding (a guaranteed, not merely best-effort, runtime-to-Skill binding) | [#255](https://github.com/amirbena/code-review-skill/issues/255) — a correctness requirement there; #250's `--plugin-dir` hint (below) is explicitly not this |
 | Container / sandbox orchestration, a hosted service, database persistence, dashboards | out of scope for the epic; a container is at most a *future* isolation mechanism, not required by this contract |
 | The fixture format and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |
-| The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
-| The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
+| The P0/P1/P2 definitions and the decision derivation | `../../shared/policies/severity.md` |
+| The finding field shape | `../../shared/templates/finding.md` |
 
 ## 9. On the reviewer adapter
 
@@ -262,7 +262,7 @@ its Markdown report back into `ProducedFinding` objects. For a
 the admitted member alias → workspace mapping and drives the Skill with an
 explicit multi-repository Review Target naming exactly those members —
 never the unadmitted ones — mirroring
-[`multi-repository-review-target.md`](../../skills/local-code-review/policies/multi-repository-review-target.md)'s
+`multi-repository-review-target.md`'s
 own input contract; this is a second call shape on the same adapter type,
 not a second adapter. The CLI
 entrypoint at

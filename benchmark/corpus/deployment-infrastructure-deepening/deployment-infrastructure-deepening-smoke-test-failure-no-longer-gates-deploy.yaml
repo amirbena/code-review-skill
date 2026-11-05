@@ -5,7 +5,7 @@
 # Failure-propagation property: an operational reliability regression. A
 # failing pre-deploy gate no longer stops the deploy.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: deployment-infrastructure-deepening-smoke-test-failure-no-longer-gates-deploy
 title: "release.yml marks the pre-deploy smoke test continue-on-error so a failing smoke test no longer blocks the production deploy"
@@ -60,6 +60,7 @@ expected:
       defect_kind: pre-deploy-gate-failure-no-longer-blocks-deploy
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [regression]
   rationale: >-

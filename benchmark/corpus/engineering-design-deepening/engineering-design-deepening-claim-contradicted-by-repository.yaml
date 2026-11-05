@@ -5,7 +5,7 @@
 # Positive: a load-bearing claim about existing code that the repository
 # contradicts. The evidence sits in the pre-image (base).
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: engineering-design-deepening-claim-contradicted-by-repository
 title: "A design relies on the payment handler already deduplicating, and the handler has no deduplication"
@@ -54,6 +54,7 @@ expected:
       defect_kind: load-bearing-claim-contradicted
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

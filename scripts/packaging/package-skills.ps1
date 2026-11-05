@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 <#
-  Package one or both Code Review Agent Skills into self-contained,
+  Package the Code Review Agent Skills declared in package-manifest.json into self-contained,
   standalone distributable archives, using explicit allowlists (never the
   whole repository). Each archive has its own SKILL.md at the archive
   ROOT (not nested under skills/<name>/), so a consumer never needs to
@@ -13,13 +13,11 @@
   scripts/packaging/package-skills.sh.
 
   Usage:
-    ./scripts/packaging/package-skills.ps1 local
-    ./scripts/packaging/package-skills.ps1 github
+    ./scripts/packaging/package-skills.ps1 <manifest target>
     ./scripts/packaging/package-skills.ps1 all      # default
 #>
 
 param(
-  [ValidateSet("local", "github", "all")]
   [string]$Skill = "all"
 )
 
@@ -49,8 +47,7 @@ if ($packageManifest.schema_version -ne 1) {
   exit 1
 }
 
-# Shared-link adaptation, metadata-path adaptation, release-version
-# stamping, and SKILL.md frontmatter structural validation are packaging-domain rules shared
+# Release-version stamping, and SKILL.md frontmatter structural validation are packaging-domain rules shared
 # with scripts/packaging/package-skills.sh; both platform scripts delegate to the
 # single canonical Python implementation in scripts/packaging/package_domain/ (see
 # scripts/packaging/package_adapt.py) instead of restating the rules here.
@@ -63,23 +60,14 @@ function Test-SkillFrontmatter {
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
-function Adapt-SharedLinks {
-  param([string[]]$FilePaths)
-  & $pythonCommand $packageAdapt adapt-shared-links @FilePaths
-  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-}
-
-function Adapt-MetadataPaths {
-  param([string]$MetadataPath)
-  & $pythonCommand $packageAdapt adapt-metadata-paths $MetadataPath
-  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-}
-
-# Stamps the staged SKILL.md with the release authority's version (the newest
-# `## vX.Y.Z` heading in CHANGELOG.md); fails closed when there is none.
+# Stamps the staged (packaged) SKILL.md with the release tag's version (ADR §11).
+# Without SKILL_RELEASE_VERSION it is left as committed; a Skill with no
+# `version:` line has never been released and stays unversioned.
 function Set-ReleaseVersion {
   param([string]$SkillMdPath)
-  & $pythonCommand $packageAdapt stamp-release-version $SkillMdPath (Join-Path $repoRoot "CHANGELOG.md")
+  $stampArgs = @()
+  if ($env:SKILL_RELEASE_VERSION) { $stampArgs = @("--version", $env:SKILL_RELEASE_VERSION) }
+  & $pythonCommand $packageAdapt stamp-release-version $SkillMdPath @stampArgs
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
@@ -132,14 +120,6 @@ function Package-Skill {
   & $pythonCommand $packageAdapt normalize-tree $stageDir
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-  # Adapt relative links into shared/ across every packaged Markdown
-  # file (skill-local links like ../SKILL.md or runbooks/... need no
-  # change, since skill-internal relative depth is unchanged).
-  $mdFiles = @(Get-ChildItem -Path $stageDir -Filter "*.md" -Recurse | ForEach-Object { $_.FullName })
-  if ($mdFiles.Count -gt 0) {
-    Adapt-SharedLinks -FilePaths $mdFiles
-  }
-  Adapt-MetadataPaths -MetadataPath (Join-Path $stageDir "metadata/skill.yaml")
   Set-ReleaseVersion -SkillMdPath (Join-Path $stageDir "SKILL.md")
 
   # --- Validate staged package structure before archiving ---
@@ -201,12 +181,18 @@ $script:builtSkills = @()
 Write-Host "Repository root: $repoRoot"
 New-Item -ItemType Directory -Path $distDir, $treesRoot -Force | Out-Null
 
-if ($Skill -eq "local" -or $Skill -eq "all") {
-  Package-Skill -PackageTarget "local"
+# Enumerating Properties is StrictMode-safe when the manifest declares no Skill.
+$manifestTargets = @($packageManifest.skills.PSObject.Properties | ForEach-Object { $_.Name })
+if ($Skill -ne "all") {
+  if ($manifestTargets -notcontains $Skill) {
+    Write-Error "unknown target '$Skill' (not in package-manifest.json)"
+    exit 1
+  }
+  $manifestTargets = @($Skill)
 }
 
-if ($Skill -eq "github" -or $Skill -eq "all") {
-  Package-Skill -PackageTarget "github"
+foreach ($manifestTarget in $manifestTargets) {
+  Package-Skill -PackageTarget $manifestTarget
 }
 
 & $pythonCommand $packageAdapt write-tree-manifest $distDir @($script:builtSkills)

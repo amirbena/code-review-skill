@@ -15,6 +15,10 @@ v2 behavior. v2.x stays the published line until the cutover (#851).
 | --- | --- | --- |
 | [`adr-v3-review-core.md`](adr-v3-review-core.md) | The decision: Core and mini-skill boundaries, final Skill names, activation model, removal list, safety guarantees S1–S10 with owners, the `release/v3` integration-branch strategy, the repository-development rules that conflict with v3, and one release-tag version for every v3 Skill (§11). | [#842](https://github.com/amirbena/code-review-skill/issues/842) |
 | [`packaged-file-disposition.md`](packaged-file-disposition.md) | The disposition of **every** current packaged file (`skills/*/**`, `shared/**`): Core, a named mini-skill, or removed, with a one-line reason. | [#842](https://github.com/amirbena/code-review-skill/issues/842) |
+| [`review-publish-github.md`](review-publish-github.md) | Where the v2 publication rules, benchmark corpora and `scripts/github_integration/` code went for the publication mini-skill. | [#844](https://github.com/amirbena/code-review-skill/issues/844) |
+| [`domain-mini-skills-benchmark-remap.md`](domain-mini-skills-benchmark-remap.md) | How the v2 deepening benchmark cases map to `review-security` and `review-backend`: core-floor, uplift or clean-guard. | [#846](https://github.com/amirbena/code-review-skill/issues/846) |
+| [`v2-retirement.md`](v2-retirement.md) | What the v2 retirement removed: source trees, docs, corpora, and the purpose bucket of every deleted test module. | [#849](https://github.com/amirbena/code-review-skill/issues/849) |
+| [`review-runtime-check.md`](review-runtime-check.md) | Where the v2 runtime-validation and trusted-host rules went for the execution mini-skill, and the fate of the sandbox benchmark cases. | [#847](https://github.com/amirbena/code-review-skill/issues/847) |
 
 ## Epic and delivery
 
@@ -29,8 +33,8 @@ to `main`.
 
 ## Related
 
-- Current (v2) system map: [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
-- The repository-development rules v3 must rewrite:
+- The v3 system map: [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
+- The repository-development rules rewritten for v3 (#849):
   [`../../AGENTS.md`](../../AGENTS.md) "Skill instruction ownership",
   [`../../policies/skill-development-policy.md`](../../policies/skill-development-policy.md),
   [`../../policies/review-orchestration-policy.md`](../../policies/review-orchestration-policy.md)

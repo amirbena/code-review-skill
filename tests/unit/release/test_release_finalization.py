@@ -12,13 +12,14 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tests.unit.release._shared import COVERED_CHANGELOG, _FakeGit, rw
 
 SHA = "a" * 40
 VERSION = "1.60.0"
 TAG = f"v{VERSION}"
-ASSETS = ("local-code-review-skill.zip", "github-pr-review-skill.zip")
+ASSETS = ("review-core-skill.zip", "review-security-skill.zip")
 
 
 def _tag_refs(sha: str = SHA, tag: str = TAG) -> str:
@@ -52,6 +53,11 @@ class _Case(unittest.TestCase):
         real_git, real_gh = rw.gitgh._git, rw.gitgh._gh
         self.addCleanup(setattr, rw.gitgh, "_git", real_git)
         self.addCleanup(setattr, rw.gitgh, "_gh", real_gh)
+        # The real package manifest declares no Skill until the v3 cutover, so
+        # the archive set under test is fixed here.
+        targets = patch("release_lib.finalization.skill_targets", return_value=[(a[:-10], a) for a in ASSETS])
+        targets.start()
+        self.addCleanup(targets.stop)
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.tmp = Path(tmp.name)

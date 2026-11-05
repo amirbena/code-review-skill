@@ -10,7 +10,7 @@
 # api-gateway and orchestration-service changes and differs only in
 # downstream-consumer.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: three-repo-coordinated-correct
 title: "idempotency_key threaded correctly through api-gateway, orchestration-service, and downstream-consumer"
@@ -116,6 +116,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, regression]
   rationale: >-

@@ -77,7 +77,7 @@ def comprehensive_corpus_digest(corpus_root: Path) -> str:
     Same identity shape as `corpus_digest` (every fixture id/path +
     content digest, so a corpus change is detected rather than silently
     accepted — regression-report.md §2/§3), but computed over the
-    recursively-discovered `benchmark-case/v2` membership
+    recursively-discovered `benchmark-case/v3` membership
     (`benchmark_corpus_membership.discover_comprehensive_fixtures`)
     instead of `corpus_dir`'s own non-recursive top-level glob. This
     deliberately produces a *different* `corpus_id` than `corpus_digest`

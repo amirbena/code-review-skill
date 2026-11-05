@@ -1,0 +1,67 @@
+# Workspace sibling context corpus case (Issue #664). Format:
+# ../../../runtime_platform/benchmark/fixture-format.md `input.workspace_siblings`.
+# See ./README.md for the cluster.
+#
+# A one-line README change raises no unresolved question, so the granted
+# workspace is never listed or read. analytics-batch holds an obvious SQL
+# injection unrelated to this change; reporting it would be a finding located
+# outside the Review Target.
+
+format: benchmark-case/v2
+
+id: wsib-unrelated-sibling-no-pollution
+title: "A README clarification with an unrelated, defective sibling in the workspace"
+
+input:
+  patch: |
+    diff --git a/README.md b/README.md
+    --- a/README.md
+    +++ b/README.md
+    @@ -1,3 +1,3 @@
+     # payment-service
+
+    -Owns the PaymentStatus schema and the refund workflow.
+    +Owns the PaymentStatus schema and the refund workflow (see docs/consumers.md).
+  base:
+    README.md: |
+      # payment-service
+
+      Owns the PaymentStatus schema and the refund workflow.
+  workspace_siblings:
+    analytics-batch:
+      files:
+        reports/sales.py: |
+          import sqlite3
+          import sys
+
+
+          def report(conn: sqlite3.Connection):
+              region = sys.argv[1]
+              return conn.execute("SELECT * FROM sales WHERE region = '" + region + "'").fetchall()
+    docs-site:
+      files:
+        README.md: |
+          # Docs site
+
+          Static documentation for the public website.
+  context: >-
+    The caller grants a workspace root once. Sibling repositories under it
+    are read-only evidence for an unresolved question, never part of the
+    Review Target.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    Issue #664 class 6: unrelated sibling. A sibling is never read to look
+    for additional findings, so any finding here is pollution.
+  taxonomy:
+    capability: [workspace-sibling-context]
+    policy_contract: [workspace-sibling-context]
+    risk_mode: [no-op]
+    affected_surface: [benchmark-corpus-or-tooling]

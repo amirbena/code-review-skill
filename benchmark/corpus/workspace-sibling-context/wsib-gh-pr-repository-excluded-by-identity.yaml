@@ -7,7 +7,7 @@
 # file. The PR repository is excluded by identity, not only by path, so it is
 # never read back as its own sibling.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: wsib-gh-pr-repository-excluded-by-identity
 title: "PaymentStatus gains refunded; the workspace holds a stale checkout of the PR's own repository"
@@ -88,6 +88,7 @@ expected:
       defect_kind: enum-member-added-context-dependent
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

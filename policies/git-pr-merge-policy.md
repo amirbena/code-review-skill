@@ -4,10 +4,10 @@ Canonical rules for **commits, pushes, Pull Requests, merges, post-merge
 cleanup, and destructive-Git prohibitions** in development of *this*
 repository.
 
-This is a repository-development policy. It is **not** packaged into either
+This is a repository-development policy. It is **not** packaged into any
 Skill archive, and no packaged Skill resource may depend on it. It governs
 development of *this* repository only — it is distinct from how
-`local-code-review` or `github-pr-review` reviews an external repository
+`review-core` and its mini-skills review an external repository
 (see each Skill's own `SKILL.md`). See
 [`repository-workflow.md`](repository-workflow.md) for task-branch
 creation and base synchronization,
@@ -20,7 +20,7 @@ routing.
 Before opening a PR for this repository:
 
 - validate the work — the targeted local checks relevant to the change
-  (see [`../README.md`](../README.md#local-validation-before-opening-a-pr));
+  (see [`../CONTRIBUTING.md`](../CONTRIBUTING.md#local-validation-before-opening-a-pr));
   the full test suite is CI's responsibility, not a local precondition
 - fetch remote state
 - inspect branch/base divergence

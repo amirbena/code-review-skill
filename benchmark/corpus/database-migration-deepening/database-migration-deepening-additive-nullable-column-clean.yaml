@@ -10,7 +10,7 @@
 # within its own bounded investigation, so Activation condition 2 is
 # never satisfied and this capability does not engage.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: database-migration-deepening-additive-nullable-column-clean
 title: "0004_add_preferred_language adds a nullable column with no default and one reader"
@@ -88,6 +88,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

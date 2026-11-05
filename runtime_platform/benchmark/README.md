@@ -5,8 +5,8 @@ benchmark (parent [#40](https://github.com/amirbena/code-review-skill/issues/40)
 a repeatable way to tell whether a Skill change improved or regressed
 review quality against a fixed corpus.
 
-Like [`../../docs/findings/`](../../docs/findings/README.md) and
-[`../../docs/runtime-parallelism.md`](../../docs/runtime-parallelism.md), these are
+Like `../../docs/findings/` and
+`../../docs/runtime-parallelism.md`, these are
 repository-development docs — **not** packaged into either Skill archive,
 and no packaged Skill resource depends on them. The normative rule for each
 concern lives in the file named for it.
@@ -18,7 +18,7 @@ concern lives in the file named for it.
 | [`fixture-format.md`](fixture-format.md) | The canonical machine-readable format for a single benchmark case — case identity, input (inline patch or repository reference), expected findings, expected severity, expected location detail, the four typed variance constructs (same-defect alternatives, alternative findings, optional findings, permitted severity variance), required metadata including its mandatory canonical taxonomy classification, schema/versioning, and fail-closed validation. | [#50](https://github.com/amirbena/code-review-skill/issues/50) |
 | [`taxonomy.md`](taxonomy.md) | The canonical, closed, alias-free benchmark candidate taxonomy — four dimensions (`capability`, `policy_contract`, `risk_mode`, `affected_surface`) each with an explicit `unclassified` member, corpus case classification metadata and its fail-closed validation, the one bounded schema-constrained PR-diff classification model call, and the deterministic non-LLM inverted index (`corpus-index.json`) that lets PR-time candidate selection narrow the corpus by lookup instead of a full scan. | [#333](https://github.com/amirbena/code-review-skill/issues/333) |
 | [`selection.md`](selection.md) | The deterministic Top-K benchmark selector over #333's candidate pool — the weighted Case Relevance Score and its `primary`/`secondary`/`not-eligible` bands, the distinct Selection Coverage Score and its 60% golden threshold, the greedy coverage-maximizing bounded Top-K algorithm (`K_DEFAULT`/`K_MAX`), the explicit non-silent `insufficient-coverage` outcome, and the machine-readable explainability object published per run. Ships informational-only. | [#334](https://github.com/amirbena/code-review-skill/issues/334) |
-| [`../../benchmark/corpus/README.md`](../../benchmark/corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v2` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
+| [`../../benchmark/corpus/README.md`](../../benchmark/corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v3` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | [`runner-contract.md`](runner-contract.md) | How a benchmark run executes the reviewer over the corpus — per-case isolation into a disposable workspace, the repository-safety invariants for every protected source checkout, cleanup on success and failure, the machine-readable per-case result shape, single-case vs. whole-corpus runs, and the exit-status rule. | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | [`regression-report.md`](regression-report.md) | How a candidate run is compared against a stored baseline — the baseline result artifact, the corpus-identity guard, the per-case and aggregate deltas, the metric-free rule that separates a regression from an improvement, deterministic output, and the deliberate baseline-refresh step. | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
 | [`match-criteria.md`](match-criteria.md) | When a produced review finding matches an expected benchmark finding — the two match axes (location, defect), the three-valued `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how `alternatives` / `any_of` / `match: optional` resolve. The pairing relation the [#41](https://github.com/amirbena/code-review-skill/issues/41) quality metrics are built on. | [#54](https://github.com/amirbena/code-review-skill/issues/54) |
@@ -37,7 +37,6 @@ concern lives in the file named for it.
 | [`benchmark-result-schema.md`](benchmark-result-schema.md) | The exact `benchmark-result/v1` sealed-record and `benchmark-receipt/v1` schemas for a scheduled run: `run_id` identity, canonical-JSON `content_sha256` sealing, per-case `fixture_digest` comparability, the conformance validator and reference fixtures, and the first record-size measurement against the growth trigger. | [#468](https://github.com/amirbena/code-review-skill/issues/468) |
 | [`publication-cli.md`](publication-cli.md) | The deterministic publisher's `sweep` and `watchdog` commands: App-token-only credentials and acting identity, `--once` and `--dry-run`, the handoff file it reads, the ordered validate → persist → reconcile → announce → receipt pass with its refusal gates, publisher-authored marker recognition (A14), lane-aware drift-issue resolution (A9), recurrence links, spam bounds, and failure-table recovery; and the `watchdog`'s gap-based missed-run issues and edited-in-place health-status comment. Retires the in-Routine `GhCliIssueClient` path. | [#471](https://github.com/amirbena/code-review-skill/issues/471), [#472](https://github.com/amirbena/code-review-skill/issues/472) |
 | [`shadow-validation.md`](shadow-validation.md) | Measuring whether #334's Top-K selector is trustworthy: the burn-in-sample join of a PR's selection to #339's classified nightly regressions, the case-level miss rate, the empirically-defined redundancy rate (never the selector's own always-positive marginal-coverage-gain signal), and the evidence-bar decision methodology — a process, not a hard-coded threshold, since no bar is asserted in advance of real observed data. Ships informational-only; required-gate promotion stays explicitly conditional on a future, not-currently-pursued Class 1 runtime. | [#335](https://github.com/amirbena/code-review-skill/issues/335) |
-| [`structured-result-runtime-properties.md`](structured-result-runtime-properties.md) | Decision record and on-demand, maintainer-run measurement of two structured-review-result properties no single-output check can see: whether a matched finding keeps its `identity.stable_id` across repeated runs, and whether `structured_review_result` leaves the review unchanged — the fixture subset, run count, alternating arms, variance rule, and how to read the recorded result. Not a lane, not a gate. | [#529](https://github.com/amirbena/code-review-skill/issues/529) |
 
 The first four documents cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
 benchmark surface; [`match-criteria.md`](match-criteria.md) ([#54](https://github.com/amirbena/code-review-skill/issues/54))
@@ -63,7 +62,7 @@ report ([#53](https://github.com/amirbena/code-review-skill/issues/53)) is
 ## Worked example
 
 [`../../benchmark/examples/example-case.yaml`](../../benchmark/examples/example-case.yaml) is one complete,
-validated `benchmark-case/v2` fixture referenced by `fixture-format.md`
+validated `benchmark-case/v3` fixture referenced by `fixture-format.md`
 §12. It is an illustrative reference for the format, **not** a corpus case
 (the corpus is #51). Its automated validation and the negative tests for
 the format's rejection rules live in
@@ -72,7 +71,7 @@ the format's rejection rules live in
 ## Corpus
 
 [`corpus/`](../../benchmark/corpus/README.md) holds the initial benchmark corpus (#51):
-one crafted `benchmark-case/v2` fixture per review category, each a
+one crafted `benchmark-case/v3` fixture per review category, each a
 self-contained inline patch with its pre-image and expected findings. The
 corpus is validated by
 [`../../tests/unit/benchmark/test_benchmark_corpus.py`](../../tests/unit/benchmark/test_benchmark_corpus.py)
@@ -215,260 +214,6 @@ key beside `metrics`; it never gates anything. The test-only reference
 it (executed by
 [`../../tests/unit/benchmark/test_benchmark_citation.py`](../../tests/unit/benchmark/test_benchmark_citation.py),
 including every §7 worked example).
-
-## Senior voice examples
-
-[`senior-voice-examples.md`](../../benchmark/senior-voice-examples.md) (issue
-[#231](https://github.com/amirbena/code-review-skill/issues/231), design
-record [#229](https://github.com/amirbena/code-review-skill/issues/229))
-is a **documented reference set, not a CI gate**, unlike everything above:
-eight findings paired as their structured and senior-voice renderings,
-demonstrating the voice principles owned by
-[`../../shared/templates/finding-rendering-human.md`](../../shared/templates/finding-rendering-human.md),
-"Senior voice contract". It measures presentation quality, which the
-#40/#41 corpus and metrics above do not.
-
-## Reviewer Brief benchmark
-
-[`../../benchmark/corpus/reviewer-brief/README.md`](../../benchmark/corpus/reviewer-brief/README.md)
-(issue [#309](https://github.com/amirbena/code-review-skill/issues/309),
-depends on [#304](https://github.com/amirbena/code-review-skill/issues/304))
-pins the semantic quality and publication isolation of the private,
-caller-facing `Reviewer Brief` every `github-pr-review` result includes.
-Unlike every corpus above, it is not `benchmark-case/v2` fixtures — that
-schema has no field for a private prose artifact or for a second,
-GitHub-bound surface to compare it against — so it follows the
-test-only-reference-model pattern instead:
-[`reference/reviewer_brief_fixtures.py`](reference/reviewer_brief_fixtures.py),
-exercised by
-[`../../tests/unit/benchmark/test_reviewer_brief_structural.py`](../../tests/unit/benchmark/test_reviewer_brief_structural.py)
-(deterministic structural properties) and
-[`../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`](../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py)
-(zero-leakage into the GitHub-bound review body/inline comments, including
-a negative canary proving the check can catch a real leak). The
-semantic-quality properties whose wording is intentionally flexible are a
-documented, non-CI-gated reference set,
-[`reviewer-brief-examples.md`](../../benchmark/reviewer-brief-examples.md), exactly like
-the senior voice examples below.
-
-## Agent-spawn / delegation benchmark
-
-[`../../benchmark/corpus/delegation-spawn/README.md`](../../benchmark/corpus/delegation-spawn/README.md)
-(issue [#307](https://github.com/amirbena/code-review-skill/issues/307),
-depends on [#303](https://github.com/amirbena/code-review-skill/issues/303))
-proves the agent-spawn and delegated-authority capability boundary stays
-bounded: no `spawn_agent` capability, invocation agent-count/spawn-depth
-budgets, the capability-subset delegation rule, non-transferable
-mutation/formal-review-action authorization, sibling-collusion
-resistance, and confused-deputy protection. Like the Reviewer Brief
-benchmark below, it is not `benchmark-case/v2` fixtures — that schema has
-no field for a capability grant, a spawn-depth/agent-count budget, or a
-structural allow/deny result — so it follows the same test-only
-reference-model pattern:
-[`reference/delegation_fixtures.py`](reference/delegation_fixtures.py),
-exercised by
-[`../../tests/unit/benchmark/test_delegation_spawn_corpus.py`](../../tests/unit/benchmark/test_delegation_spawn_corpus.py)
-(structural allow/deny assertions against the single reference model,
-corpus-completeness checks against every `DELEG-###`/tagged `DOS-###`
-threat-scenario id, and malformed-fixture rejection). Every comparison is
-a deterministic structural assertion — never an LLM/rubric score — and
-the corpus is disjoint from the finding-precision/recall/severity
-metrics above and from ordinary code-review quality fixtures.
-
-## Trusted-host natural-language authorization benchmark
-
-[`../../benchmark/corpus/trusted-host-nl-authorization/README.md`](../../benchmark/corpus/trusted-host-nl-authorization/README.md)
-(issue [#370](https://github.com/amirbena/code-review-skill/issues/370),
-depends on [#369](https://github.com/amirbena/code-review-skill/issues/369))
-proves natural-language `allow_trusted_host_execution` authorization
-resolves by **semantic intent, not literal phrase-matching**: canonical
-structured authorization, direct and several differently-worded
-affirmative requests, the full explicit-denial vocabulary, ambiguous
-phrasing and descriptive/policy-quoting mentions that must never be
-mistaken for a grant, repository-controlled and malicious-instruction-file
-attempts, PR-content escalation and delegated-agent report-back attempts,
-authorization non-persistence across invocations, conflicting positive/
-negative instructions resolving toward denial, and sandbox-preferred
-selection holding regardless of authorization presence. Like the
-Agent-spawn / delegation benchmark above, it is not `benchmark-case/v2`
-fixtures — that schema has no field for a resolved authorization boolean
-or an execution-backend provenance value — so it follows the same
-test-only reference-model pattern:
-[`reference/trusted_host_nl_fixtures.py`](reference/trusted_host_nl_fixtures.py),
-exercised by
-[`../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py`](../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py)
-(structural resolved/provenance assertions against the single reference
-model in `tests/reference/review/runtime_validation.py`, required-category
-and required-coverage-tag completeness, a canary proving the
-repository/malicious-file rejection has genuine detection power, and
-malformed-fixture rejection). Every comparison is a deterministic
-structural assertion — never an LLM/rubric score — and the corpus is
-disjoint from the finding-precision/recall/severity metrics above and
-from ordinary code-review quality fixtures. It does not re-test #367's
-structured-flag-only behavior or #302's sandbox isolation guarantees,
-which already have their own coverage.
-
-## Publication-mode benchmark
-
-[`../../benchmark/corpus/publication-mode/README.md`](../../benchmark/corpus/publication-mode/README.md)
-(issue [#316](https://github.com/amirbena/code-review-skill/issues/316),
-depends on [#314](https://github.com/amirbena/code-review-skill/issues/314))
-proves the passive/semi/active review-publication boundary #314
-established stays bounded: mode resolution, publication intent,
-formal-action selection, actual GitHub-bound side-effect presence or
-absence, semi/active semantic equivalence before publication, the
-self-review boundary across every mode, the review-publication-only
-authority boundary, and a small bounded set of equivalent invocation
-phrasings — including a stable, named fixture reproducing the PR #297
-regression shape (an explicit `ACTIVE` request with a clean, otherwise-
-publishable review must never resolve to a withheld mutation for a
-missing second activation signal). Like the two benchmarks above, it is
-not `benchmark-case/v2` fixtures — that schema has no field for a
-publication mode, a "would publish" preview, or a GitHub-bound
-publication artifact — so it follows the same test-only reference-model
-pattern:
-[`reference/publication_mode_fixtures.py`](reference/publication_mode_fixtures.py),
-exercised by
-[`../../tests/unit/benchmark/test_publication_mode_corpus.py`](../../tests/unit/benchmark/test_publication_mode_corpus.py).
-Uniquely among the corpora above, it constructs and inspects the actual
-GitHub-bound publication artifact (`body` + inline comments + `event`, or
-the narrower self-review informational `COMMENT`) rather than only the
-resolver's `MutationOutcome` — a caller-facing sentence that nothing was
-posted is not, by itself, evidence. Every comparison is a deterministic
-structural assertion, and the corpus is disjoint from the
-finding-precision/recall/severity metrics above and from ordinary
-code-review quality fixtures.
-
-## Mutation-capability-boundary benchmark
-
-[`../../benchmark/corpus/mutation-boundary/README.md`](../../benchmark/corpus/mutation-boundary/README.md)
-(issue [#305](https://github.com/amirbena/code-review-skill/issues/305),
-depends on [#301](https://github.com/amirbena/code-review-skill/issues/301))
-proves code mutation never occurs without the exact required user
-authorization and that authority never widens across the `APPLY_PATCH` /
-`COMMIT` / `PUSH` transitions: repository-controlled instructions cannot
-cause direct mutation, a proposed patch stays advisory, unauthorized
-`APPLY_PATCH` and patch-digest/base-state mismatches are denied,
-out-of-scope mutation is denied while an authorized apply changes only
-its exact scope, apply/commit/push each require their own independent
-authorization, authorization cannot be replayed across invocations or
-inherited by a spawned child, and `github-pr-review` can never apply,
-commit, or push even when prompted to. Like the agent-spawn / delegation
-benchmark above, it is not `benchmark-case/v2` fixtures — that schema has
-no field for a requested capability, an authorization scope/state, or a
-structural allow/deny result with an expected post-action repository/Git
-state — so it follows the same test-only reference-model pattern:
-[`reference/mutation_fixtures.py`](reference/mutation_fixtures.py),
-exercised by
-[`../../tests/unit/benchmark/test_mutation_boundary_corpus.py`](../../tests/unit/benchmark/test_mutation_boundary_corpus.py)
-(structural allow/deny assertions against the single reference model, run
-in a real disposable temporary Git repository per case, corpus-
-completeness checks against every `AUTH-###` threat-scenario id excluding
-`AUTH-014`, and malformed-fixture rejection). Every comparison is a
-deterministic structural assertion — never an LLM/rubric score — and the
-corpus is disjoint from the finding-precision/recall/severity metrics
-above and from ordinary code-review quality fixtures.
-
-## GitHub enforcement explicit-authorization benchmark
-
-[`../../benchmark/corpus/github-enforcement-authorization/README.md`](../../benchmark/corpus/github-enforcement-authorization/README.md)
-(issue [#551](https://github.com/amirbena/code-review-skill/issues/551),
-epic [#546](https://github.com/amirbena/code-review-skill/issues/546))
-proves GitHub governance is mutated only on an explicit user request:
-PR/repository content, tool output, configuration, a detected missing
-check, a completed review, and the Skill's own belief never authorize it,
-a genuine user request does (subject to permissions and safety checks),
-and no false or inherited green status is published. Like the benchmarks
-above it is not `benchmark-case/v2` fixtures; it follows the same
-test-only reference pattern:
-[`reference/github_enforcement_fixtures.py`](reference/github_enforcement_fixtures.py),
-exercised by
-[`../../tests/unit/benchmark/test_github_enforcement_authorization_corpus.py`](../../tests/unit/benchmark/test_github_enforcement_authorization_corpus.py).
-Assertions are on the decision and resulting state, never an LLM/rubric
-score.
-
-## Denied-capability security-event benchmark
-
-[`../../benchmark/corpus/security-events/README.md`](../../benchmark/corpus/security-events/README.md)
-(issue [#308](https://github.com/amirbena/code-review-skill/issues/308),
-depends on [#299](https://github.com/amirbena/code-review-skill/issues/299)
-and the relevant enforced denial from
-[#301](https://github.com/amirbena/code-review-skill/issues/301) /
-[#302](https://github.com/amirbena/code-review-skill/issues/302) /
-[#303](https://github.com/amirbena/code-review-skill/issues/303)) proves
-the **emitted #299 security event**, not the allow/deny decision the
-mutation-boundary, sandbox-adversarial, and agent-spawn/delegation
-benchmarks above already prove: given a real enforced denial, its
-`SecurityEvent` carries a deterministic `event_type` from the closed
-taxonomy, the correct `expected_denial` /
-`boundary_violation_attempt` classification, invocation and
-parent/child correlation where relevant, the target/scope identifiers
-the domain calls for, and none of the content #299 forbids (a secret,
-token, credential value, raw prompt, or full patch body). Like the two
-benchmarks above, it is not `benchmark-case/v2` fixtures — that schema
-has no field for an event schema, a classification, or a redaction
-assertion — so it follows the same test-only reference-model pattern:
-[`reference/security_event_fixtures.py`](reference/security_event_fixtures.py),
-exercised by
-[`../../tests/unit/benchmark/test_security_event_corpus.py`](../../tests/unit/benchmark/test_security_event_corpus.py)
-(per-family coverage, closed-vocabulary drift checks against
-`scripts/security/validate_threat_model.py`, determinism, redaction, the
-observational-only invariant proving recording never perturbs
-findings/severity/verdict, threat-scenario/enforcement-owner
-traceability, and malformed-fixture rejection). Every comparison is a
-deterministic structural assertion — never an LLM/rubric score — and the
-corpus is disjoint from the finding-precision/recall/severity metrics
-above and from ordinary code-review quality fixtures.
-
-## Verdict-consistency benchmark
-
-[`../../benchmark/corpus/verdict-consistency/README.md`](../../benchmark/corpus/verdict-consistency/README.md)
-(issue [#378](https://github.com/amirbena/code-review-skill/issues/378),
-depends on [#377](https://github.com/amirbena/code-review-skill/issues/377))
-proves the shared verdict-consistency comparator #377 built from #351's
-design record actually withholds a mismatched rendered or submitted
-decision signal before it can be returned or published — a deliberately
-adversarial corpus, distinct from
-[#350](https://github.com/amirbena/code-review-skill/issues/350)'s
-normal-path proof that a real blocking finding correctly *derives* a
-blocking verdict. Coverage spans all four reconciliation points
-`shared/policies/verdict-consistency.md` names: `local-code-review`
-pre-render, `github-pr-review` PASSIVE/SEMI pre-render, `github-pr-review`
-ACTIVE pre-render, and `github-pr-review` ACTIVE pre-publish against the
-literal GitHub review API `event` — including the required highest-risk
-blocking-findings → clean/`Approve` mismatch at each point, a case
-proving the pre-publish point independently catches a silent drift
-introduced after the pre-render point already passed, the `REVIEW
-INCOMPLETE` carve-out under adversarial drift (a mismatch that happens to
-involve the carve-out is still caught, never misclassified as it), and
-control cases proving a genuinely consistent signal is never withheld.
-Like the benchmarks above, it is not `benchmark-case/v2` fixtures — that
-schema has no field for an already-finalized decision, a drifted
-rendered/submitted signal, or a withheld-artifact outcome — so it follows
-the same test-only reference-model pattern:
-[`reference/verdict_consistency_fixtures.py`](reference/verdict_consistency_fixtures.py),
-exercised by
-[`../../tests/unit/benchmark/test_verdict_consistency_corpus.py`](../../tests/unit/benchmark/test_verdict_consistency_corpus.py)
-(structural withhold/emit assertions against the single real comparator
-in `tests/reference/review/verdict_consistency.py`, an `Observed`-shape
-invariant rejecting both a self-corrected two-artifact outcome and a
-silently-skipped zero-artifact outcome, reconciliation-point completeness
-checks, and malformed-fixture rejection). Every comparison is a
-deterministic structural assertion — never an LLM/rubric score — and the
-corpus is disjoint from the finding-precision/recall/severity metrics
-above and from ordinary code-review quality fixtures. It does not
-re-test #377's own comparator unit suite, which already proves the raw
-functions mechanically in isolation, and it does not redesign or
-re-derive `severity.md`'s decision semantics.
-
-[#806](https://github.com/amirbena/code-review-skill/issues/806) adds the
-mandatory-policy-read check
-(`check_policy_reads` in
-[`reference/benchmark_blocking_verdict.py`](reference/benchmark_blocking_verdict.py),
-fixtures in [`../../benchmark/corpus/policy-loading/`](../../benchmark/corpus/policy-loading/README.md)):
-a review trace is compared with the required `SKILL.md` section 2 set, and
-anything short of fully `confirmed` reads must render `REVIEW INCOMPLETE`.
-It runs offline over recorded traces; its limits are in that README.
 
 ## Claim-correspondence matcher adequacy
 

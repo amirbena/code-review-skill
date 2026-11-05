@@ -6,7 +6,7 @@
 # claim fails closed: no breakage is invented, no "no consumers" statement is
 # made, and the review still completes cleanly.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: external-pinned-context-unavailable-fails-closed
 title: "PaymentStatus gains refunded; the pinned ledger-consumer revision is absent locally"
@@ -70,6 +70,7 @@ expected:
       defect_kind: enum-member-added-context-dependent
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

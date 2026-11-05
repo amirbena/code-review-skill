@@ -7,11 +7,11 @@ whether bounded, caller-granted workspace sibling evidence lets a review
 resolve an unresolved question before escalation, without adding unjustified
 certainty when the evidence is thin. The design, arms, and pre-registered gate
 are in
-[`../../../runtime_platform/benchmark/workspace-sibling-context-measurement.md`](../../../runtime_platform/benchmark/workspace-sibling-context-measurement.md).
+`../../../runtime_platform/benchmark/workspace-sibling-context-measurement.md`.
 
-## `input.workspace_siblings` — an additive `benchmark-case/v2` input
+## `input.workspace_siblings` — an additive `benchmark-case/v3` input
 
-Every case is a `benchmark-case/v2` fixture parsed by the one reference
+Every case is a `benchmark-case/v3` fixture parsed by the one reference
 validator ([`fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
 §6.6) and indexed in [`corpus-index.json`](../../corpus-index.json). The input
 maps an alias to a sibling repository (`files` committed as HEAD, optional
@@ -41,4 +41,4 @@ capability-on configuration there. The capability-off arm exists only in the
 on-demand measurement.
 
 Deterministic fixture, materialization, and adapter behavior is covered by
-[`tests/unit/benchmark/test_workspace_sibling_corpus.py`](../../../tests/unit/benchmark/test_workspace_sibling_corpus.py).
+`tests/unit/benchmark/test_workspace_sibling_corpus.py`.

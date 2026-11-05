@@ -347,8 +347,8 @@ ordered flow fails closed before anything is pushed if any step fails:
    `## Unreleased` has notes, `vX.Y.Z` is a valid, not-yet-existing tag.
 3. Rolls `## Unreleased` into `## vX.Y.Z — <date>`.
 4. **Stamps** `vX.Y.Z` (as `X.Y.Z`) into the `version:` frontmatter line of
-   both Skills' `SKILL.md`, so the committed files match the release.
-5. Builds **and verifies** both Skill archives (`package-skills.sh all`,
+   every packaged Skill's `SKILL.md` (inserting the line where a never-released v3 Skill has none, ADR §11), so the committed files match the release.
+5. Builds **and verifies** every Skill archive (`package-skills.sh all`,
    which also leaves the validated `dist/skills/<name>/` trees the zips are
    built from, `unzip -t`, presence checks, and that each archive's
    `SKILL.md` version is exactly `X.Y.Z` — a mismatch fails the run before anything is
@@ -467,22 +467,19 @@ yet.
 
 ### Skill archive version
 
-The version authority is the newest `## vX.Y.Z` heading in `CHANGELOG.md`,
-which only the release flow writes (alongside the `vX.Y.Z` tag). Every
-archive `package-skills.sh` / `package-skills.ps1` builds — a release, a
-local build, or the PR `package` job — has its `SKILL.md` frontmatter
-`version` stamped from it, so an archive never reports a stale committed
-value:
+The version authority is the Git release tag `vX.Y.Z`. The release run
+passes its `X.Y.Z` to packaging (`SKILL_RELEASE_VERSION`, set by
+`verify-skill-archives.sh --build --expect-version`), and packaging stamps
+the *packaged copy* of every Skill's `SKILL.md` with it, never the source.
+CHANGELOG headings are not consulted:
 
-- **Release build:** the heading just rolled in step 3 is the planned
-  version, and step 5 verifies the archives against it.
-- **Local / PR build:** the archives report the newest published release
-  version the tree builds on. If the committed `SKILL.md` value differs,
-  packaging prints a note and uses the authority; if `CHANGELOG.md` is
-  missing or has no release heading, packaging fails with no archive.
-- The committed `version:` is only a mirror that step 4 keeps equal to the
-  release; nobody bumps it by hand, and it is unrelated to
-  `metadata/skill.yaml`'s own independently maintained `version`.
+- **Release build:** every archive reports the planned version, and step 5
+  verifies the archives against it.
+- **Local / PR build:** no release version is passed, so each archive keeps
+  the committed `version:`. A v3 Skill that has no `version:` line before
+  its first release is built without any version.
+- The committed `version:` is a mirror that step 4 updates at each release;
+  nobody bumps it by hand, and a release never requires editing it.
 
 In the built tree and archive the version is written as `metadata.version`
 rather than the source's top-level `version:` line, because the Agent Skills
@@ -637,8 +634,8 @@ idempotency/drift checks. `skills/<name>/` is never touched by the adapter.
 ### Claude marketplace decisions (#510)
 
 - Marketplace and plugin are both named `code-review-skills`; one plugin
-  exposes both Skills, giving `/code-review-skills:local-code-review` and
-  `/code-review-skills:github-pr-review`. Install with
+  exposes all Skills, giving `/code-review-skills:review-core`,
+  `/code-review-skills:local-code-review` and the rest. Install with
   `/plugin marketplace add amirbena/code-review-skills`, then
   `/plugin install code-review-skills@code-review-skills`.
 - `disable-model-invocation` is **not** applied: neither Skill needs it, and

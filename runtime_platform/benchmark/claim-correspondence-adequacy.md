@@ -11,7 +11,7 @@ implementing, the smallest deterministic contract change that would close
 the observed gap.
 
 This document is a research record, like
-[`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)
+`../../docs/findings/finding-matching-strategy.md`
 (#59). It does not redefine `match-criteria.md`'s contract; any redesign it
 recommends is a proposal for a subsequent reviewed change to that document,
 per #343's own scope.
@@ -135,7 +135,7 @@ scoring `UNRELATED`, not to location.
 
 Per #343's adjudication instruction, each produced claim was compared
 against its expected `claim` and judged against the finding-quality
-contract ([`../../shared/templates/finding.md`](../../shared/templates/finding.md)):
+contract (`../../shared/templates/finding.md`):
 same root defect, clear consequence, understandable without the fixture, no
 missing causal detail.
 
@@ -273,7 +273,7 @@ check: *"`defect_kind` decides when both sides have one. Equal slugs →
 `runtime_platform/benchmark/scripts/benchmark_review_adapter.py::parse_review_output` has no
 regex or field for a produced `defect_kind` — because the packaged
 `local-code-review` finding rendering
-([`../../shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md))
+(`../../shared/templates/finding-rendering.md`)
 has no field for one at all. Every produced finding in this study, and by
 construction every produced finding the production adapter has ever parsed,
 carries `defect_kind: None`. Per §4.1's own text, *"a missing `defect_kind`
@@ -302,7 +302,7 @@ non-goals):
 
 - Add a `defect_kind`-equivalent, machine-readable defect-class slug to the
   canonical full finding rendering
-  ([`../../shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md))
+  (`../../shared/templates/finding-rendering.md`)
   that `local-code-review` (and, for parity, `github-pr-review`) actually
   emits per finding.
 - Extend `benchmark_review_adapter.py::parse_review_output` to capture it

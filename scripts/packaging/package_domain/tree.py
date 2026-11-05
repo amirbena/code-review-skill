@@ -73,6 +73,8 @@ def normalize_tree(root: Path) -> None:
 def distribution_frontmatter(text: str) -> str:
     """Move the frontmatter's top-level ``version`` to ``metadata.version`` (built tree only).
 
+    Without a ``version:`` line the text is returned unchanged: no ``metadata.version``.
+
     ``skills-ref validate`` (Agent Skills spec) allows only ``name``,
     ``description``, ``license``, ``compatibility``, ``metadata`` and
     ``allowed-tools`` at the top level (#507: recorded result). The source
@@ -90,7 +92,8 @@ def distribution_frontmatter(text: str) -> str:
         if match:
             lines[index : index + 1] = ["metadata:", f'  version: "{match.group(1)}"']
             return "\n".join(lines)
-    raise SkillTreeError("SKILL.md frontmatter has no top-level 'version:' line to normalize")
+    # A never-released v3 Skill has no version: the built tree carries none (ADR §11).
+    return text
 
 
 def distribute_skill_md(skill_md: Path) -> None:

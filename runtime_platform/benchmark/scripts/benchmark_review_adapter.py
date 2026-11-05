@@ -774,13 +774,8 @@ class ProductionReviewerAdapter:
         return summary
 
     def _review_signals(self, summary: bre.StreamSummary) -> dict[str, Any] | None:
-        """Rendered Result/Decision/Coverage and policy-read compliance; report-only, never fails a run."""
-        skill_md = self.plugin_dir / "skills" / bre.SKILL_NAME / "SKILL.md"
-        try:
-            report = str((summary.result or {}).get("result") or "")
-            return review_signals(skill_md.read_text(encoding="utf-8"), summary.tool_calls, report)
-        except (OSError, ValueError):
-            return None
+        """Rendered Result/Decision/Coverage; report-only, never fails a run."""
+        return review_signals(str((summary.result or {}).get("result") or ""))
 
     def _verify_stream(self, stdout: str, evidence: bre.RunEvidence) -> str:
         summary = self._absorb_stream(stdout, evidence)

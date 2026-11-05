@@ -8,7 +8,6 @@ import unittest
 import yaml
 
 from scripts.validation import ci_test_route as router
-from tests.integration.packaging._shared import TEMP_ROOT_INPUTS
 from tests.support.paths import REPO_ROOT
 
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "validate.yml"
@@ -164,14 +163,9 @@ class IntegrationInputGuardTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertFalse(_overlaps_allowlist(path))
 
-    def test_temp_root_copy_list_shares_no_path_with_the_fast_allowlist(self) -> None:
-        for path in TEMP_ROOT_INPUTS:
-            with self.subTest(path=path):
-                self.assertFalse(_overlaps_allowlist(path))
-
     def test_integration_repo_root_reads_share_no_path_with_the_fast_allowlist(self) -> None:
         reads = _integration_repo_root_reads()
-        self.assertIn("CHANGELOG.md", reads)
+        self.assertIn("scripts/packaging/package-manifest.json", reads)
         for path in sorted(reads):
             with self.subTest(path=path):
                 self.assertFalse(_overlaps_allowlist(path))

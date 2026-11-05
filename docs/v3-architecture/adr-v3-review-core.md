@@ -18,7 +18,7 @@ all of it. The measurements below were taken for #842 on v2.0.0
 (`0369f40`):
 
 - **Load cost before the diff is read.**
-  [`context_size_report.py`](../../scripts/validation/context_size_report.py)
+  `context_size_report.py`
   reports that Local loads 13 files (~42k est. tokens) before step 1 and
   GitHub loads 24 files (~76k). About 23k lines of packaged instructions sit
   across 2 Skills, 51 `shared/` files and 19 `capabilities/` manifests.
@@ -351,29 +351,47 @@ and no separate counter: v2's independently maintained `version` in
 This reuses the existing release flow ([`../RELEASE.md`](../RELEASE.md),
 "Skill archive version"). No new versioning mechanism is added:
 
-- **Authority.** The release run writes the `## vX.Y.Z` CHANGELOG heading
-  and creates the annotated `vX.Y.Z` tag on the same release commit, and
-  release verification checks that the tag points at that commit.
-  Packaging reads the heading, never Git, so builds stay offline and
-  byte-reproducible. A packaged Skill carries its version as data and
-  needs no Git at runtime.
-- **Representation.** Unchanged from v2. The source `SKILL.md` keeps a
-  top-level `version:` mirror line, which the release run stamps. The
+- **Authority.** The Git release tag `vX.Y.Z`. The release run creates the
+  annotated tag on the release commit, verification checks that it points
+  there, and the run passes its `X.Y.Z` to packaging. CHANGELOG headings
+  and per-Skill values never decide a release's version. Packaging itself
+  reads no Git, so builds stay offline and byte-reproducible, and a
+  packaged Skill carries its version as data.
+- **Representation.** Every source `SKILL.md` keeps a top-level `version:`
+  line, from the cutover on. Packaging stamps the packaged copy with the
+  tag's version, so source files are never edited to build an archive. The
   built tree and archive carry it as `metadata.version` (#507). The
   `{{version}}` in `distribution/portable/plugin.json` and
   `distribution/claude/marketplace.json` gets the same value.
 - **Before the cutover.** A v3 Skill has never been released, so it must
-  not report the current v2.x version. On `release/v3`, v3 `SKILL.md`
-  files carry **no** `version:` line, and a non-release build emits no
-  `metadata.version` for them. It does not borrow the newest v2.x heading
-  the way a v2 Skill's local or PR build does. Today, packaging fails when
-  a manifest Skill has no `version:` line.
-- **At the cutover.** The release run's stamp step writes `version: 3.0.0`
-  into every packaged Skill, inserting the line where it is missing.
-  Archive verification then requires exactly `3.0.0` in every archive, as
-  it does today for v2. After that, v3 behaves like v2: the committed line
-  is a mirror that nobody edits by hand.
+  not report a v2.x version. On `release/v3`, v3 `SKILL.md` files carry
+  **no** `version:` line, and a build without a release version emits no
+  `metadata.version` for them.
+- **At the cutover.** The release run stamps `version: 3.0.0` into the
+  source Skills, inserting the line where it is missing, and packaging
+  stamps `3.0.0` into every archive. Archive verification requires exactly
+  `3.0.0`. Later releases need no edits to source: tag `v3.1.0` makes all
+  eleven archives `3.1.0`, whatever the source line says. The source line
+  stays at its last committed release value until a release run updates it.
 - **Owner.** [#851](https://github.com/amirbena/code-review-skill/issues/851)
   implements the packaging and release changes (manifest, the
   pre-release no-version rule, insert-on-stamp) and their tests. The other
   children add no `version:` line and no version field of their own.
+
+## 12. Compatibility entrypoints
+
+v2 users invoke `local-code-review` and `github-pr-review`. v3 keeps those
+two names, exactly as published in v2.0.0, as thin wrappers over
+`review-core`, and still ships `review-core` and the eight mini-skills under
+their own names. Backward compatibility is for the invocation names, not for
+v2 behavior or machinery.
+
+- A wrapper is one short `SKILL.md` that delegates to `review-core`. It
+  restates no Core policy, severity rule or review logic, and carries no v2
+  loading inventory.
+- `github-pr-review` never publishes on its own: publication stays an
+  explicit request handled by `review-publish-github` (S7).
+- There is no router, dispatcher or orchestration layer. The wrappers are
+  ordinary Skills.
+- [#851](https://github.com/amirbena/code-review-skill/issues/851) packages,
+  distributes and validates them. #849 only removes the v2 implementation.

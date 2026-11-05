@@ -2,15 +2,15 @@
 
 Repository-development artifact for GitHub Issue
 [#129](https://github.com/amirbena/code-review-skill/issues/129). This is a
-**focused sub-corpus** of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
+**focused sub-corpus** of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures demonstrating the acceptance criterion "benchmark fixtures
 demonstrate measurable gains over diff-only review without unacceptable
 false-positive growth" for the
-[repository-intelligence model](../../../docs/repository-intelligence/repository-intelligence-model.md)
+repository-intelligence model
 — the typed entity/relationship model, retrieval bounds, provenance,
 snapshot identity/staleness, and relationship-influence attribution that
 sits inside the ring
-[`../../../shared/policies/repository-expansion.md`](../../../shared/policies/repository-expansion.md)
+`../../../shared/policies/repository-expansion.md`
 (#87) already authorizes.
 
 Every case conforms to [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
@@ -75,15 +75,15 @@ header comment.
 
 ## Relationship-influence attribution and staleness are reference-model concerns
 
-`benchmark-case/v2` has no field for `influential_relationships` or a
+`benchmark-case/v3` has no field for `influential_relationships` or a
 snapshot-identity/staleness state — the format's schema is closed and this
 corpus does not extend it (see
 [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §2, "an unknown key
 anywhere is a rejection"). Those concerns are proven at the reference-model
 level instead: each case above has a matching case in
-[`../../../tests/unit/review/repository_intelligence/test_repository_intelligence.py`](../../../tests/unit/review/repository_intelligence/test_repository_intelligence.py)
+`../../../tests/unit/review/repository_intelligence/test_repository_intelligence.py`
 that exercises
-[`../../../tests/reference/review/repository_intelligence.py`](../../../tests/reference/review/repository_intelligence.py)
+`../../../tests/reference/review/repository_intelligence.py`
 directly — constructing the same resolved relationship (or unresolved
 candidate) the fixture's rationale describes, asserting its
 `influential_relationships` membership, and asserting current/stale
@@ -96,7 +96,7 @@ values).
 
 ## Validation
 
-[`../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`](../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py)
+`../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`
 loads every `*.yaml` here through the same single reference validator
 [`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second

@@ -261,8 +261,8 @@ precision/recall. Those are #41 and are computed from the fixtures'
 | The fixture format and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | Automatic baseline promotion / "update on green" | out of scope for [#53](https://github.com/amirbena/code-review-skill/issues/53) by its Non-Goals |
 | CI wiring / scheduled execution / where the baseline file is stored | tracked on [#40](https://github.com/amirbena/code-review-skill/issues/40) |
-| The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
-| The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
+| The P0/P1/P2 definitions and the decision derivation | `../../shared/policies/severity.md` |
+| The finding field shape | `../../shared/templates/finding.md` |
 
 ## 11. On not being a scorer
 

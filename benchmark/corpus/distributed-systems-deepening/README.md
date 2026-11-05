@@ -7,12 +7,12 @@ capability tracked by parent Issue
 [#84](https://github.com/amirbena/code-review-skill/issues/84) and its
 own parent, the adaptive specialist-depth composition contract
 [#82](https://github.com/amirbena/code-review-skill/issues/82). This is a
-**focused sub-corpus** of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
+**focused sub-corpus** of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures pinning representative Distributed Systems deepening outcomes as
 follow-up quality hardening — it validates domain correctness after the
 capability exists and does not define, gate, or redesign it. The
 capability itself is designed and packaged in
-[`../../../shared/policies/distributed-systems-deepening.md`](../../../shared/policies/distributed-systems-deepening.md),
+`../../../shared/policies/distributed-systems-deepening.md`,
 which this corpus's expectations must stay consistent with.
 
 Every case conforms to [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
@@ -29,7 +29,7 @@ reference validator
 
 **One case per outcome shape** #272's scope requires, each isolating that
 shape so a regression in any one is unambiguous. The six cases mirror
-[`distributed-systems-deepening.md`](../../../shared/policies/distributed-systems-deepening.md)'s
+`distributed-systems-deepening.md`'s
 own worked examples and Activation section, and split evenly between
 "the capability engages and finds a real defect" and "the capability
 correctly stays quiet":
@@ -66,7 +66,7 @@ filename-signal-suppressed) are deliberately distinct from each other and
 from the guarded-clean case: the not-materially-implicated case fails
 Activation condition 1 (the domain itself is not implicated), the
 filename-signal case is the narrower guard from
-[`specialist-depth.md`](../../../shared/policies/specialist-depth.md)
+`specialist-depth.md`
 that a naming coincidence is a signal, never independently sufficient,
 and the retry-idempotency-guarded case shows the domain *is* implicated
 and the capability *does* trace it, but finds the guard already holds —

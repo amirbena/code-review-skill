@@ -4,12 +4,12 @@ Repository-development artifact for GitHub Issue
 [#328](https://github.com/amirbena/code-review-skill/issues/328). Parent
 capability: [#327](https://github.com/amirbena/code-review-skill/issues/327),
 which extends
-[`../../../shared/policies/architectural-placement.md`](../../../shared/policies/architectural-placement.md),
+`../../../shared/policies/architectural-placement.md`,
 "Analogue-based responsibility/placement pattern inference," so a review
 can infer an established but undocumented local responsibility/placement
 pattern from analogous implementations and flag a materially consequential
 deviation from it. This is a **focused sub-corpus** of
-[`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md) fixtures that pin the
+[`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md) fixtures that pin the
 expected outcomes for that capability and keep it from regressing into a
 disguised style-consistency checker.
 
@@ -64,7 +64,7 @@ never whether a specific decomposition or test-organization style wins.
   real disagreement between two duplicated copies) rather than a
   hypothetical "could drift later" — satisfying the concrete-consequence
   bar in `architectural-placement.md` and the severity discipline in
-  [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
+  `../../../shared/policies/severity.md`,
   "Repository conventions and severity": severity tracks the consequence
   (a real crash, a real auth failure), never the mere fact that an implicit
   convention was violated.

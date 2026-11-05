@@ -1,7 +1,7 @@
 # Release / Changelog Policy
 
 Canonical repository-development rules for classifying `CHANGELOG.md`
-entries by SemVer intent. This policy is **not packaged into either Skill
+entries by SemVer intent. This policy is **not packaged into any Skill
 archive**. See [`../docs/RELEASE.md`](../docs/RELEASE.md) for the release flow
 and [`../scripts/release/release_worthiness.py`](../scripts/release/release_worthiness.py) for
 the deterministic implementation.

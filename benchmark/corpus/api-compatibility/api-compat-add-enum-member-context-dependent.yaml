@@ -11,7 +11,7 @@
 # decision with an *optional* finding surfacing the ambiguity, rather than
 # inventing a breaking claim the diff does not support.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: api-compat-add-enum-member-context-dependent
 title: "PaymentStatus gains a refunded member; compatibility depends on unmodeled consumer behavior"
@@ -61,6 +61,7 @@ expected:
       defect_kind: enum-member-added-context-dependent
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

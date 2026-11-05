@@ -8,7 +8,7 @@
 # domain is not materially implicated by review-scope.md's base pass in
 # the first place, so the deepening capability never engages.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: security-deepening-auth-module-no-trust-boundary-clean
 title: "auth/session_store.py adds an internal lookup-count metric; no trust-boundary behavior changes"
@@ -47,6 +47,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [security]
   rationale: >-

@@ -11,7 +11,7 @@
 # Expected: ONE required finding anchored in tests/test_stats.py;
 # math/stats.py never becomes an anchor.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-defective-test-not-production
 title: "A new test asserts the wrong expectation for total([]); the fix belongs in the test, not production"
@@ -65,6 +65,7 @@ expected:
       defect_kind: incorrect-test-expectation
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

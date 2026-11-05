@@ -4,7 +4,7 @@
 #
 # Negative: an alternative the reviewer might prefer is not a finding.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: engineering-design-deepening-preference-only-alternative-clean
 title: "A design chooses polling over a message queue with a coherent mechanism and no stated goal it fails"
@@ -35,6 +35,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [no-op]
   rationale: >-

@@ -19,7 +19,6 @@ from runtime_platform.benchmark.scripts import (
     benchmark_corpus_membership as membership,
     benchmark_lane_run as lane_run,
     build_benchmark_index as build_index,
-    measure_structured_result as measure,
     run_benchmark,
     select_benchmark_cases as select_cases,
 )
@@ -92,12 +91,9 @@ FROZEN_FIXTURE_HEADERS = (
 )
 # Named historical records that describe the old path by design.
 HISTORICAL_RECORDS = {
-    "docs/capability-architecture/benchmark-ownership-boundary-checkpoint.md": 21,
-    "docs/capability-architecture/benchmark-root-ownership-decision.md": 5,
     "runtime_platform/benchmark/scheduled-operations/decision-record.md": 1,
     # The retired ci-integration.md (deleted by #420) lived under the old tree.
     "docs/benchmark-measurement-architecture/benchmark-measurement-architecture-model.md": 2,
-    "docs/capability-architecture/capability-architecture-model.md": 1,
 }
 OLD_PATH_ALLOWLIST = {
     **{p: 1 for p in FROZEN_FIXTURE_HEADERS},
@@ -112,8 +108,17 @@ def _git(*args: str) -> str:
     ).stdout
 
 
+# The frozen v2 archive (Issue #848) keeps its original bytes, links and old-tree
+# references on purpose; every active file is still checked.
+FROZEN_ARCHIVE = "benchmark/corpus-v2/"
+
+
 def _tracked() -> list[str]:
-    return [p for p in _git("ls-files").splitlines() if (REPO_ROOT / p).is_file()]
+    return [
+        p
+        for p in _git("ls-files").splitlines()
+        if (REPO_ROOT / p).is_file() and not p.startswith(FROZEN_ARCHIVE)
+    ]
 
 
 def _text(rel: str) -> str | None:
@@ -192,7 +197,6 @@ class ResolvedPathTests(unittest.TestCase):
             "build_benchmark_index.DEFAULT_CORPUS_DIR": build_index.DEFAULT_CORPUS_DIR,
             "build_benchmark_index.DEFAULT_INDEX_PATH": build_index.DEFAULT_INDEX_PATH,
             "select_benchmark_cases.DEFAULT_INDEX_PATH": select_cases.DEFAULT_INDEX_PATH,
-            "measure_structured_result.CORPUS_DIR": measure.CORPUS_DIR,
             "run_benchmark.DEFAULT_CORPUS_DIR": run_benchmark.DEFAULT_CORPUS_DIR,
             "benchmark_lane_run.ROUTINE_DOC": lane_run.ROUTINE_DOC,
             "benchmark_result_reference.DEFAULT_CORPUS_ROOT": brr.DEFAULT_CORPUS_ROOT,

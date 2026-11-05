@@ -20,7 +20,7 @@
 # Expected: no finding caused by the missing validation in the reporting
 # path.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: cfv-semantic-role-no-inference
 title: "sku validated at reservation intake, read unvalidated in internal reporting: different responsibilities, no defect inferred"
@@ -72,6 +72,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

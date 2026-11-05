@@ -1,0 +1,54 @@
+# Deployment/infrastructure-deepening corpus case (Issue #743, parent #740,
+# depends on #742). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# #181 boundary: a base-image FROM bump belongs to the dependency/supply-
+# chain pass. No USER, ENTRYPOINT, or other deployment-behavior property
+# changes, so this capability produces nothing.
+
+format: benchmark-case/v2
+
+id: deployment-infrastructure-deepening-dockerfile-from-only-boundary-clean
+title: "Dockerfile bumps the FROM tag node:20.10 -> node:20.11 and changes nothing else"
+
+input:
+  patch: |
+    diff --git a/Dockerfile b/Dockerfile
+    index 1111111..2222222 100644
+    --- a/Dockerfile
+    +++ b/Dockerfile
+    @@ -1,4 +1,4 @@
+    -FROM node:20.10-slim
+    +FROM node:20.11-slim
+     WORKDIR /app
+     COPY package*.json ./
+     RUN npm ci --omit=dev
+  base:
+    Dockerfile: |
+      FROM node:20.10-slim
+      WORKDIR /app
+      COPY package*.json ./
+      RUN npm ci --omit=dev
+      COPY . .
+      USER node
+      EXPOSE 3000
+      ENTRYPOINT ["node", "server.js"]
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    Pins the ownership boundary with dependency/supply-chain review: the
+    only change is a patch-level FROM tag, and USER, EXPOSE, and ENTRYPOINT
+    are untouched, so no deployment-behavior property changes and no
+    deployment finding may be reported.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

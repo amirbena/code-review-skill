@@ -1,7 +1,8 @@
-"""Release-version resolution and SKILL.md frontmatter version stamping.
+"""SKILL.md frontmatter version stamping.
 
-The version authority is the newest ``## vX.Y.Z`` heading in CHANGELOG.md,
-written only by the release flow alongside the ``vX.Y.Z`` tag.
+The release version is the ``X.Y.Z`` of the Git release tag ``vX.Y.Z``; the
+release run passes it in (ADR §11). Packaging stamps the *packaged copy* with
+it and never reads CHANGELOG headings or Git.
 """
 
 from __future__ import annotations
@@ -11,30 +12,7 @@ from pathlib import Path
 
 _STRICT = r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
 VERSION_RE = re.compile(rf"^{_STRICT}$")
-_RELEASE_HEADING = re.compile(rf"^## v({_STRICT})(?=\s|$)", re.MULTILINE)
 _VERSION_LINE = re.compile(r"^version:[ \t]*(\S+)[ \t]*\r?$")
-
-
-class ReleaseVersionError(ValueError):
-    """The release authority could not be resolved."""
-
-
-def newest_release_version(changelog_text: str) -> str | None:
-    match = _RELEASE_HEADING.search(changelog_text)
-    return match.group(1) if match else None
-
-
-def resolve_release_version(changelog: Path) -> str:
-    try:
-        text = Path(changelog).read_bytes().decode("utf-8")
-    except OSError as exc:
-        raise ReleaseVersionError(f"cannot read the release authority {changelog}: {exc}") from exc
-    version = newest_release_version(text)
-    if version is None:
-        raise ReleaseVersionError(
-            f"{changelog} has no '## vX.Y.Z' release heading to derive the packaged Skill version from"
-        )
-    return version
 
 
 def _frontmatter_version_index(lines: list[str]) -> int | None:
@@ -68,23 +46,50 @@ def frontmatter_version(text: str) -> str | None:
     return None
 
 
-def stamp_frontmatter_version(text: str, version: str) -> str:
+def stamp_frontmatter_version(text: str, version: str, *, insert_missing: bool = False) -> str:
+    """Write `version` into the frontmatter's top-level `version:` line.
+
+    A v3 Skill carries no `version:` line before its first release (ADR §11).
+    Only the release run's stamp step passes ``insert_missing=True``, which
+    adds the line after ``description:``; any other caller fails on a missing line.
+    """
     if not VERSION_RE.match(version):
         raise ValueError(f"version must be strict x.y.z (no 'v' prefix, no leading zeros): got {version!r}")
     lines = text.split("\n")
     index = _frontmatter_version_index(lines)
     if index is None:
-        raise ValueError("SKILL.md frontmatter has no 'version:' line to stamp")
+        if not insert_missing:
+            raise ValueError("SKILL.md frontmatter has no 'version:' line to stamp")
+        return _insert_version_line(lines, version)
     lines[index] = f"version: {version}" + ("\r" if lines[index].endswith("\r") else "")
     return "\n".join(lines)
 
 
-def stamp_skill_md_from_authority(skill_md: Path, changelog: Path) -> tuple[str, str | None]:
-    """Stamp `skill_md` with the authority's version; return (version, previous value if it changed)."""
-    version = resolve_release_version(changelog)
+def _insert_version_line(lines: list[str], version: str) -> str:
+    plain = [line.rstrip("\r") for line in lines]
+    if not plain or plain[0] != "---" or "---" not in plain[1:]:
+        raise ValueError("SKILL.md has no frontmatter to insert a 'version:' line into")
+    closing = plain.index("---", 1)
+    # `description:` must stay the last frontmatter line (packaging validation), so the
+    # version goes before it, as in v2.
+    at = next((i for i in range(1, closing) if plain[i].startswith("description:")), closing)
+    eol = "\r" if lines[0].endswith("\r") else ""
+    lines.insert(at, f"version: {version}{eol}")
+    return "\n".join(lines)
+
+
+def stamp_skill_md(skill_md: Path, version: str | None) -> tuple[str | None, str | None]:
+    """Stamp the packaged `skill_md` with the release tag's `version`; return (version, previous value if it changed).
+
+    Without a release version (a local or PR build) the file is left as it is:
+    a Skill with no `version:` line has never been released (ADR §11) and stays
+    unversioned, and one with a line keeps its committed value.
+    """
     text = Path(skill_md).read_bytes().decode("utf-8")
+    if version is None:
+        return None, None
     previous = frontmatter_version(text)
-    stamped = stamp_frontmatter_version(text, version)
+    stamped = stamp_frontmatter_version(text, version, insert_missing=True)
     if stamped == text:
         return version, None
     Path(skill_md).write_bytes(stamped.encode("utf-8"))

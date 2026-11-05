@@ -1,0 +1,101 @@
+# Workspace sibling context corpus case (Issue #664). Format:
+# ../../../runtime_platform/benchmark/fixture-format.md `input.workspace_siblings`.
+# See ./README.md for the cluster.
+#
+# GitHub mode only. The workspace holds payment-service-checkout, another
+# checkout of the PR's own repository identity, with a stale strict consumer
+# file. The PR repository is excluded by identity, not only by path, so it is
+# never read back as its own sibling.
+
+format: benchmark-case/v2
+
+id: wsib-gh-pr-repository-excluded-by-identity
+title: "PaymentStatus gains refunded; the workspace holds a stale checkout of the PR's own repository"
+
+input:
+  patch: |
+    diff --git a/schemas/payment_status.schema.json b/schemas/payment_status.schema.json
+    --- a/schemas/payment_status.schema.json
+    +++ b/schemas/payment_status.schema.json
+    @@ -2,5 +2,5 @@
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "PaymentStatus",
+       "type": "string",
+    -  "enum": ["pending", "completed", "failed"]
+    +  "enum": ["pending", "completed", "failed", "refunded"]
+     }
+  base:
+    schemas/payment_status.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "PaymentStatus",
+        "type": "string",
+        "enum": ["pending", "completed", "failed"]
+      }
+    docs/consumers.md: |
+      # Payment service
+
+      Owns the PaymentStatus schema.
+  workspace_siblings:
+    payment-service-checkout:
+      mirrors_review_target: true
+      files:
+        schemas/payment_status.schema.json: |
+          {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "PaymentStatus",
+            "type": "string",
+            "enum": ["pending", "completed", "failed"]
+          }
+        ledger/apply_status.py: |
+          def apply_status(entry, status):
+              if status == "pending":
+                  entry.hold()
+              elif status == "completed":
+                  entry.settle()
+              elif status == "failed":
+                  entry.release()
+              else:
+                  raise ValueError(f"unknown payment status: {status}")
+    docs-site:
+      files:
+        README.md: |
+          # Docs site
+
+          Static documentation for the public website.
+  context: >-
+    The caller grants a workspace root once. Sibling repositories under it
+    are read-only evidence for an unresolved question, never part of the
+    Review Target.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: payment-status-new-enum-member-pr-repository-excluded
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: line
+        path: schemas/payment_status.schema.json
+        symbol: PaymentStatus
+        anchor: '"enum": ["pending", "completed", "failed", "refunded"]'
+      claim: >-
+        PaymentStatus gains a new enum member, refunded. Whether this
+        breaks a consumer is context-dependent and the available evidence
+        does not decide it, so no breakage is claimed and the
+        compatibility question stays open for the engineer.
+      defect_kind: enum-member-added-context-dependent
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Issue #664 GitHub-mode case: the PR repository's identity is excluded
+    before nomination, so a breakage claim drawn from its stale checkout
+    is overreach.
+  taxonomy:
+    capability: [workspace-sibling-context]
+    policy_contract: [workspace-sibling-context]
+    risk_mode: [correctness]
+    affected_surface: [benchmark-corpus-or-tooling]

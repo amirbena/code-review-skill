@@ -1,17 +1,15 @@
 # Documentation UX and Information Architecture Policy
 
 Applies to this repository's human-facing documentation — the root
-[`../README.md`](../README.md), [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md),
-[`../docs/CODE_REVIEW_COMPARISON.md`](../docs/CODE_REVIEW_COMPARISON.md), the
-user-facing feature guides under [`../docs/features/`](../docs/features/README.md),
-and the Skill `README.md` files. It governs *structure and reading
+[`../README.md`](../README.md), [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), and the other
+explanatory pages under `../docs/`. It governs *structure and reading
 experience*, not normative content, and never overrides the
 policy-ownership model in
 [`skill-development-policy.md`](skill-development-policy.md) or
 [`python_scripts_coding_policy.md`](python_scripts_coding_policy.md).
 
-This is a repository-development policy. It is **not** packaged into either
-Skill archive, and no packaged Skill resource may depend on it. See
+This is a repository-development policy. It is **not** packaged into any
+Skill archive, and no packaged Skill file may depend on it. See
 [`AGENTS.md`](../AGENTS.md) for global invariants, instruction precedence,
 and task routing.
 
@@ -44,86 +42,66 @@ orientation and navigation surfaces — never capability encyclopedias. The
 reader drills down through layers:
 
 ```text
-root README            → what this repo provides, which Skills exist, the
-                         distinction, high-level capability categories, links onward
-Skill README           → that Skill's purpose, basic usage, a compact
-                         capability/difference summary, key boundaries, links onward
-docs/features/README.md → the capability catalog: which Skill(s) support each
-                         optional/advanced feature and how it is activated
-docs/features/<name>.md → one capability's user-facing explanation and invocation
-docs/ARCHITECTURE.md    → the concise system map (components, lifecycle,
+root README            → what this repo provides, which Skills exist, how to
+                         choose, links onward
+SKILL.md               → each Skill's contract (canonical, not explanatory)
+docs/ARCHITECTURE.md   → the concise system map (components, lifecycle,
                          relationships, boundaries, invariants)
-policies/ + runbooks    → canonical exact semantics and operational contracts
+policies/              → canonical exact repository-development semantics
 ```
 
 When adding or changing a capability, update the smallest appropriate
 layer and link the others to it; do not copy the same detailed
 explanation into several READMEs, and do not grow a README merely to make
 a capability discoverable when a deeper surface exists or should exist.
-READMEs and feature guides are explanatory; a canonical policy or runbook
+READMEs and `docs/` are explanatory; a canonical policy or `SKILL.md`
 wins any conflict.
 
 **Per-document responsibility.**
 
 - **README** answers: what is this, how do I install / use it, which Skill
   do I choose, where is the deeper documentation.
-- **Architecture** establishes the high-level conceptual model (what is
-  shared, what differs, the major layers, who owns policy / runbook /
-  output, what is packaged vs. test-only) before low-level implementation
-  detail. It is an overview that links to canonical detail, not a
-  policy/runbook aggregation.
-- **Feature guides** (`docs/features/`) explain a single optional or
-  advanced capability from the user's point of view — what it does, when
-  it helps, which Skill supports it, whether it is default / conditional /
-  requested, how to invoke it, its user-visible limits, and a link to the
-  canonical policy/runbook. They are guidance, not a second normative
-  layer; the canonical policy always wins.
-- **Comparison** exposes its primary comparison dimensions early, in a
-  compact table when practical, with the detailed analysis kept below it.
+- **Architecture** establishes the high-level conceptual model (the Core and
+  its mini-skills, who owns which rule, what is packaged vs. test-only)
+  before low-level implementation detail. It is an overview that links to
+  canonical detail, not a policy aggregation.
 
 **Avoid normative duplication.** Documentation summarizes and links; it is
-not a competing source of truth. Keep the ownership model intact: shared
-policies are normative shared behavior, Skill policies are target-specific
-behavior, runbooks are procedures, and `docs/` plus the READMEs are
-explanation, navigation, and mental models. Do not copy large normative
-sections out of `shared/policies/` or a Skill's `policies/` into a README
-or a `docs/` file — reference them instead.
+not a competing source of truth. Keep the ownership model intact: each `SKILL.md` and
+its rule files are normative Skill behavior, and `docs/` plus the READMEs
+are explanation, navigation, and mental models. Do not copy large
+normative sections out of a Skill into a README or a `docs/` file —
+reference them instead.
 
 ### Documentation impact for capability changes
 
-An **optional/advanced capability** is a user-visible feature of either
-Skill — the kind catalogued in
-[`../docs/features/README.md`](../docs/features/README.md). Any change to
-such a capability that affects its user-visible behavior or its contract
-must include a **documentation-impact check**: identify every
-documentation surface the change makes stale, and update the **smallest**
-one that still leaves the hierarchy correct. This is a governance rule for
-documentation completeness, not a mechanical `code X changed → doc Y must
-change` mapping.
+A **capability** is a user-visible behavior of a Skill: what it reviews,
+how it is selected, what it needs, what it refuses. Any change to a
+capability that affects its user-visible behavior or its contract must
+include a **documentation-impact check**: identify every documentation
+surface the change makes stale, and update the **smallest** one that still
+leaves the hierarchy correct. This is a governance rule for documentation
+completeness, not a mechanical `code X changed → doc Y must change`
+mapping.
 
 Cases that trigger the check: a capability is **added or removed**;
-**renamed**; its **Skill support changes** (one Skill gains or loses it);
-its **default / conditional / explicitly-requested state changes**; its
-**invocation or enablement changes**; its **user-visible limitations or
-safety boundaries change**; or its **canonical behavioral / operational
-semantics change**.
+**renamed**; its **selection or activation changes**; its **invocation or
+enablement changes**; its **user-visible limitations or safety boundaries
+change**; or its **canonical behavioral semantics change**.
 
 Route each stale surface to the smallest layer that owns it:
 
 | Surface | Update it when… |
 |---|---|
-| [`../docs/features/README.md`](../docs/features/README.md) (the catalog) | the set of capabilities changes; a capability is renamed; Skill support changes; the default / conditional / requested state changes; the canonical link moves |
-| `docs/features/<name>.md` | user-facing behavior, invocation, activation, usage, limitations, safety boundaries, or examples change |
-| Skill `README.md` | day-one usage, the compact capability/difference summary, Skill-selection guidance, or an important Skill boundary changes |
+| the Skill's `SKILL.md` or rule file | the exact behavioral semantics change |
 | root [`../README.md`](../README.md) | repository-level orientation, Skill selection, or a high-level capability *category* materially changes |
 | [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) | components, relationships, lifecycle/data flow, boundaries, invariants, or architectural ownership change |
-| canonical policy / runbook | the exact behavioral or operational semantics change |
+| canonical policy | the repository-development semantics change |
 
 Rules that bound the check:
 
 - **Do not update a README merely because implementation code changed.**
-  An internal change with no user-visible effect needs no README or
-  feature-guide edit.
+  An internal change with no user-visible effect needs no README edit.
 - **Prefer the smallest appropriate authoritative or user-facing layer**,
   and let higher layers link down to it rather than restating it — see
   "Thin README discipline" above.
@@ -134,18 +112,12 @@ Rules that bound the check:
   separate repository — the pull request description identifies the
   affected surface and the correction it needs.
 
-**Wiki feature-page consideration.** When a capability change above lands,
-also consider whether the repository Wiki's feature-page pattern (the
-`Feature-Pages` index and its per-feature pages, one layer further out
-than `docs/features/`) needs a new or updated page — a feature earns one
-once it becomes a meaningful user-visible capability with stable
-behavior. Also consider whether an existing Wiki page describes
-documented behavior, commands, or paths the change alters; a Wiki update
-need not be published before the change is merged or released. This is a
-*consideration*, not a mandatory checklist item or a
-merge blocker: it never applies to internal refactors or
-implementation-only changes with no user-visible effect, and routine
-capability edits do not require a Wiki update on every PR.
+**Wiki consideration.** When a capability change above lands, also consider
+whether the repository Wiki describes documented behavior, commands, or
+paths the change alters. A Wiki update need not be published before the
+change is merged or released. This is a *consideration*, not a merge
+blocker, and never applies to internal refactors with no user-visible
+effect.
 
 ## Navigational README for user-facing policy/guidance directories
 
@@ -162,15 +134,13 @@ tool reads the files. Judge by how the directory is actually navigated,
 not by whether it contains `.md` files.
 
 - **In scope** (each must have a README entrypoint): the repository-root
-  [`../policies/`](../policies/README.md),
-  [`../shared/policies/`](../shared/policies/README.md),
-  [`../tests/`](../tests/README.md), and
-  [`../docs/features/`](../docs/features/README.md).
+  [`../policies/`](../policies/README.md), [`../tests/`](../tests/README.md),
+  [`../benchmark/`](../benchmark/README.md) and
+  [`../runtime_platform/benchmark/`](../runtime_platform/benchmark/README.md).
 - **Not automatically in scope**: leaf/implementation directories reached
   only by following a link to a specific file — e.g. `tests/unit/`,
-  `tests/reference/`, `tests/support/`, a Skill's `templates/` or
-  `runbooks/` — unless one becomes a direct navigation surface in its own
-  right.
+  `tests/support/`, a Skill's `templates/` or `rules/` — unless one becomes
+  a direct navigation surface in its own right.
 
 **The README stays navigational, not normative.** It states purpose,
 ownership, canonicality, and routing, and links to the files that hold

@@ -326,8 +326,8 @@ close.
 | Capturing produced findings; the per-case result shape this metric consumes | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | The cross-revision stable finding identity mechanism (produced-vs-earlier-produced) | [#42](https://github.com/amirbena/code-review-skill/issues/42) / [#59](https://github.com/amirbena/code-review-skill/issues/59) |
 | CI wiring / a merge gate acting on the metric deltas | [#40](https://github.com/amirbena/code-review-skill/issues/40) |
-| The P0/P1/P2 definitions | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
-| The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
+| The P0/P1/P2 definitions | `../../shared/policies/severity.md` |
+| The finding field shape | `../../shared/templates/finding.md` |
 
 ## Status and canonical home
 

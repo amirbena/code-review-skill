@@ -6,18 +6,18 @@ capability: [#385](https://github.com/amirbena/code-review-skill/issues/385),
 implementation contract:
 [#386](https://github.com/amirbena/code-review-skill/issues/386), which adds
 "Deriving the fix/action location" to
-[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md):
+`../../../shared/templates/finding.md`:
 canonical reasoning for **how a finding's fix/action location is derived**
 from its already-accepted claim, when review evidence, causal reasoning, or
 bounded context expansion touch more than one place. This is a **focused
-sub-corpus** of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md) fixtures that
+sub-corpus** of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md) fixtures that
 pin correct primary-location selection for that reasoning.
 
 ## What this corpus does *not* assert
 
 This corpus does **not** test anchor-selection/inline-vs-body transport
 mechanics for an *already-known* location —
-[`../../../skills/github-pr-review/policies/finding-placement.md`](../../../skills/github-pr-review/policies/finding-placement.md)
+`../../../skills/github-pr-review/policies/finding-placement.md`
 (#164) already owns and tests that, given a resolved location. This corpus
 tests the layer beneath it: whether the correct primary location is
 *derived* in the first place — causal vs. symptom, caller vs. callee
