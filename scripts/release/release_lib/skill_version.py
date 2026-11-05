@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -18,10 +19,31 @@ from package_domain.version import frontmatter_version, stamp_frontmatter_versio
 PACKAGE_MANIFEST = Path("scripts") / "packaging" / "package-manifest.json"
 
 
+def _parse_targets(manifest_text: str) -> list[tuple[str, str]]:
+    manifest = json.loads(manifest_text)
+    return [(skill["name"], skill["archive"]) for skill in manifest["skills"].values()]
+
+
 def skill_targets(repo_root: Path) -> list[tuple[str, str]]:
     """(skill name, archive filename) for every packaged Skill, from the package manifest."""
-    manifest = json.loads((repo_root / PACKAGE_MANIFEST).read_text(encoding="utf-8"))
-    return [(skill["name"], skill["archive"]) for skill in manifest["skills"].values()]
+    return _parse_targets((repo_root / PACKAGE_MANIFEST).read_text(encoding="utf-8"))
+
+
+def skill_targets_at(repo_root: Path, ref: str) -> list[tuple[str, str]] | None:
+    """The packaged Skills as declared by the package manifest committed at `ref` (a release tag).
+
+    A release is judged by the archive set it was published with, which can differ
+    from the current manifest (v2 shipped two Skills, v3 ships eleven). `None` when
+    the manifest at `ref` cannot be read, so callers fail closed.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "show", f"{ref}:{PACKAGE_MANIFEST.as_posix()}"],
+            cwd=repo_root, capture_output=True, text=True, check=True,
+        )
+        return _parse_targets(result.stdout)
+    except (subprocess.CalledProcessError, OSError, ValueError, KeyError, TypeError):
+        return None
 
 
 def stamp_skill_versions(repo_root: Path, version: str) -> list[Path]:

@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Mapping, Sequence
 
 from release_lib import gitgh
-from release_lib.skill_version import skill_targets
+from release_lib.skill_version import skill_targets_at
 
 # The first version the `distribute` job published (docs/RELEASE.md,
 # "Authority boundary"). Earlier source releases were never distributed and
@@ -81,8 +81,10 @@ def unfinished_release(repo_root: Path, baseline: str, distribution_remote: str)
         missing.append("distribution tag")
     release = gitgh.release_view(repo_root, baseline)
     names = {asset.get("name") for asset in (release or {}).get("assets", [])}
-    expected = {archive for _, archive in skill_targets(repo_root)}
-    if release is None or release.get("isDraft") or not expected <= names:
+    # The archive set the baseline release was published with, not the current manifest's.
+    targets = skill_targets_at(repo_root, baseline)
+    expected = {archive for _, archive in targets} if targets is not None else None
+    if release is None or release.get("isDraft") or expected is None or not expected <= names:
         missing.append("published GitHub Release with every Skill archive")
     if not missing:
         return None
