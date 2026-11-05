@@ -53,9 +53,8 @@ class _Case(unittest.TestCase):
         real_git, real_gh = rw.gitgh._git, rw.gitgh._gh
         self.addCleanup(setattr, rw.gitgh, "_git", real_git)
         self.addCleanup(setattr, rw.gitgh, "_gh", real_gh)
-        # The real package manifest declares no Skill until the v3 cutover, so
-        # the archive set under test is fixed here.
-        targets = patch("release_lib.finalization.skill_targets", return_value=[(a[:-10], a) for a in ASSETS])
+        # The baseline release's archive set is fixed here (read from its tag's manifest in production).
+        targets = patch("release_lib.finalization.skill_targets_at", return_value=[(a[:-10], a) for a in ASSETS])
         targets.start()
         self.addCleanup(targets.stop)
         tmp = tempfile.TemporaryDirectory()
@@ -289,6 +288,26 @@ class PlanRefusesUnfinalizedVersionTests(_Case):
         release = self.release()
         release["assets"] = release["assets"][:1]
         self.assertEqual(self.plan(self.git(), _FakeGh(release))[0], 1)
+
+    def test_a_release_is_judged_by_its_own_archive_set_not_the_current_manifest(self) -> None:
+        # v2 shipped two Skills and v3 ships eleven: the v2 release stays finalized with its two archives.
+        two_archives = [(a[:-10], a) for a in ASSETS]
+        eleven = two_archives + [(f"extra-{i}", f"extra-{i}-skill.zip") for i in range(9)]
+        with patch("release_lib.finalization.skill_targets_at", return_value=two_archives) as at, \
+                patch("release_lib.skill_version.skill_targets", return_value=eleven):
+            code, outputs, _ = self.plan(self.git(), _FakeGh(self.release()))
+        self.assertEqual(code, 0)
+        self.assertNotIn("recover", outputs)
+        self.assertEqual(at.call_args.args[1], TAG)
+
+    def test_a_release_missing_one_of_its_own_archives_still_fails_closed(self) -> None:
+        release = self.release()
+        release["assets"] = release["assets"][:1]
+        self.assertEqual(self.plan(self.git(), _FakeGh(release))[0], 1)
+
+    def test_an_unreadable_historical_manifest_fails_closed(self) -> None:
+        with patch("release_lib.finalization.skill_targets_at", return_value=None):
+            self.assertEqual(self.plan(self.git(), _FakeGh(self.release()))[0], 1)
 
     def test_dispatch_hands_the_same_version_to_recovery(self) -> None:
         code, outputs, _ = self.plan(self.git(), _FakeGh(None), event="workflow_dispatch")
