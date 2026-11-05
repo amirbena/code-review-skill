@@ -21,7 +21,7 @@ packaged, and v2 behavior is unchanged until the cutover
 
 | Corpus | Disposition |
 | --- | --- |
-| `publication-mode` | Re-mapped to this Skill. The `passive`/`active`/`self_review`/`authority_boundary` shapes become [`test_review_publish_github.py`](../../tests/integration/github/test_review_publish_github.py) (no request → nothing published, self-review → `COMMENT`, stale HEAD, permission denied). The `semi` and `mode_invariant` shapes are removed: SEMI no longer exists. The v2 corpus stays until the cutover. |
+| `publication-mode` | Re-mapped to this Skill. The self-review, stale-HEAD, permission-denied and batching shapes are covered by [`test_review_publish_github.py`](../../tests/integration/github/test_review_publish_github.py). The `semi` and `mode_invariant` shapes are removed: SEMI no longer exists. The v2 corpus stays until the cutover. |
 | `github-enforcement-authorization` | Removed with the status check and required-check setup it guards (ADR §6). v3 has no governance mutation to authorize. |
 | `finding-placement` | Re-mapped to this Skill for the inline-vs-summary decision ([`rules/placement.md`](../../skills/review-publish-github/rules/placement.md)). The fix-location derivation cases belong to `review-core`. |
 
@@ -36,11 +36,13 @@ POSTs and nothing else). `enforcement.py`, `status_publisher.py`,
 `required_check_setup.py` and `lifecycle_proof.py` implement the removed
 status and required-check machinery and are deleted at the cutover.
 
-## Test model
+## Tests
 
-[`tests/reference/review/publish_github.py`](../../tests/reference/review/publish_github.py)
-is a test-only model of the Skill with an in-memory PR fake; it is never
-imported at Skill runtime.
+[`tests/support/pr_publication_fake.py`](../../tests/support/pr_publication_fake.py)
+is a minimal in-memory PR that enforces only what GitHub enforces (permission,
+no self-approval, anchors on changed lines, atomic submission). The Skill's
+rules are checked as text by the contract test. No shadow model of the
+policy is kept, since `tests/reference/review/` is removed in #849.
 
 ## Manual publish
 
