@@ -80,13 +80,18 @@ def find_broken_markdown_links(
     return broken
 
 
+# Immutable archive of the v2 benchmark corpus (Issue #848). Its READMEs keep the
+# links they had when the evidence was frozen, some to files since removed.
+FROZEN_ARCHIVE_PREFIXES: tuple[str, ...] = ("benchmark/corpus-v2/",)
+
+
 def tracked_markdown_files(repo_root: Path) -> list[Path]:
     result = subprocess.run(
         ["git", "-C", str(repo_root), "ls-files", "-z"],
         capture_output=True,
         check=True,
     )
-    paths = [path for path in result.stdout.decode().split("\0") if path.endswith(".md")]
+    paths = [path for path in result.stdout.decode().split("\0") if path.endswith(".md") and not path.startswith(FROZEN_ARCHIVE_PREFIXES)]
     return sorted(repo_root / path for path in paths)
 
 

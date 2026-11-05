@@ -241,9 +241,9 @@ GitHub-bound surface to compare it against — so it follows the
 test-only-reference-model pattern instead:
 [`reference/reviewer_brief_fixtures.py`](reference/reviewer_brief_fixtures.py),
 exercised by
-[`../../tests/unit/benchmark/test_reviewer_brief_structural.py`](../../tests/unit/benchmark/test_reviewer_brief_structural.py)
+`../../tests/unit/benchmark/test_reviewer_brief_structural.py`
 (deterministic structural properties) and
-[`../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`](../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py)
+`../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`
 (zero-leakage into the GitHub-bound review body/inline comments, including
 a negative canary proving the check can catch a real leak). The
 semantic-quality properties whose wording is intentionally flexible are a
@@ -267,7 +267,7 @@ structural allow/deny result — so it follows the same test-only
 reference-model pattern:
 [`reference/delegation_fixtures.py`](reference/delegation_fixtures.py),
 exercised by
-[`../../tests/unit/benchmark/test_delegation_spawn_corpus.py`](../../tests/unit/benchmark/test_delegation_spawn_corpus.py)
+`../../tests/unit/benchmark/test_delegation_spawn_corpus.py`
 (structural allow/deny assertions against the single reference model,
 corpus-completeness checks against every `DELEG-###`/tagged `DOS-###`
 threat-scenario id, and malformed-fixture rejection). Every comparison is

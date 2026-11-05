@@ -467,6 +467,8 @@ class DocPathMigrationTests(unittest.TestCase):
         for md in REPO_ROOT.rglob("*.md"):
             if ".git" in md.parts or "dist" in md.parts:
                 continue
+            if md.relative_to(REPO_ROOT).as_posix().startswith("benchmark/corpus-v2/"):
+                continue  # frozen v2 archive (Issue #848)
             for target in link_re.findall(md.read_text(encoding="utf-8")):
                 if target.startswith(("http://", "https://", "mailto:")):
                     continue
@@ -484,6 +486,8 @@ class DocPathMigrationTests(unittest.TestCase):
         for md in REPO_ROOT.rglob("*.md"):
             if ".git" in md.parts or "dist" in md.parts:
                 continue
+            if md.relative_to(REPO_ROOT).as_posix().startswith("benchmark/corpus-v2/"):
+                continue  # frozen v2 archive (Issue #848)
             for target in link_re.findall(md.read_text(encoding="utf-8")):
                 if target.startswith(("http://", "https://", "mailto:")):
                     continue
