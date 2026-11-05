@@ -8,7 +8,7 @@ this file only wires ``sys.argv`` to it. Called identically by
 
 Usage:
     python3 scripts/packaging/package_adapt.py validate-frontmatter <file> <expected_name>
-    python3 scripts/packaging/package_adapt.py stamp-release-version <file> <changelog>
+    python3 scripts/packaging/package_adapt.py stamp-release-version <file> [--version X.Y.Z]
     python3 scripts/packaging/package_adapt.py finalize-tree <tree> <expected_name>
     python3 scripts/packaging/package_adapt.py write-tree-manifest <dist_dir> [<name>...]
     python3 scripts/packaging/package_adapt.py normalize-tree <tree>

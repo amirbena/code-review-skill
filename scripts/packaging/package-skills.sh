@@ -52,12 +52,13 @@ validate_skill_frontmatter() {
   python3 "${package_adapt}" validate-frontmatter "${skill_md}" "${expected_name}"
 }
 
-# Stamps the staged SKILL.md with the release authority's version (the newest
-# `## vX.Y.Z` heading in CHANGELOG.md). A Skill with no `version:` line has
-# never been released (ADR §11) and is packaged without a version.
+# Stamps the staged (packaged) SKILL.md with the release tag's version (ADR §11).
+# Without SKILL_RELEASE_VERSION it is left as committed; a Skill with no
+# `version:` line has never been released and stays unversioned.
 stamp_release_version() {
   local skill_md="$1"
-  python3 "${package_adapt}" stamp-release-version "${skill_md}" "${repo_root}/CHANGELOG.md"
+  # SKILL_RELEASE_VERSION is the release tag's X.Y.Z; the release run sets it.
+  python3 "${package_adapt}" stamp-release-version "${skill_md}" ${SKILL_RELEASE_VERSION:+--version "${SKILL_RELEASE_VERSION}"}
 }
 
 package_skill() {

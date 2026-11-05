@@ -1,7 +1,8 @@
-"""Release-version resolution and SKILL.md frontmatter version stamping.
+"""SKILL.md frontmatter version stamping.
 
-The version authority is the newest ``## vX.Y.Z`` heading in CHANGELOG.md,
-written only by the release flow alongside the ``vX.Y.Z`` tag.
+The release version is the ``X.Y.Z`` of the Git release tag ``vX.Y.Z``; the
+release run passes it in (ADR §11). Packaging stamps the *packaged copy* with
+it and never reads CHANGELOG headings or Git.
 """
 
 from __future__ import annotations
@@ -11,30 +12,7 @@ from pathlib import Path
 
 _STRICT = r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
 VERSION_RE = re.compile(rf"^{_STRICT}$")
-_RELEASE_HEADING = re.compile(rf"^## v({_STRICT})(?=\s|$)", re.MULTILINE)
 _VERSION_LINE = re.compile(r"^version:[ \t]*(\S+)[ \t]*\r?$")
-
-
-class ReleaseVersionError(ValueError):
-    """The release authority could not be resolved."""
-
-
-def newest_release_version(changelog_text: str) -> str | None:
-    match = _RELEASE_HEADING.search(changelog_text)
-    return match.group(1) if match else None
-
-
-def resolve_release_version(changelog: Path) -> str:
-    try:
-        text = Path(changelog).read_bytes().decode("utf-8")
-    except OSError as exc:
-        raise ReleaseVersionError(f"cannot read the release authority {changelog}: {exc}") from exc
-    version = newest_release_version(text)
-    if version is None:
-        raise ReleaseVersionError(
-            f"{changelog} has no '## vX.Y.Z' release heading to derive the packaged Skill version from"
-        )
-    return version
 
 
 def _frontmatter_version_index(lines: list[str]) -> int | None:
@@ -100,19 +78,18 @@ def _insert_version_line(lines: list[str], version: str) -> str:
     return "\n".join(lines)
 
 
-def stamp_skill_md_from_authority(skill_md: Path, changelog: Path) -> tuple[str | None, str | None]:
-    """Stamp `skill_md` with the authority's version; return (version, previous value if it changed).
+def stamp_skill_md(skill_md: Path, version: str | None) -> tuple[str | None, str | None]:
+    """Stamp the packaged `skill_md` with the release tag's `version`; return (version, previous value if it changed).
 
-    A Skill with no `version:` line has never been released (ADR §11): it is
-    left unstamped and ``(None, None)`` is returned, so a non-release build
-    never labels it with an older release's version.
+    Without a release version (a local or PR build) the file is left as it is:
+    a Skill with no `version:` line has never been released (ADR §11) and stays
+    unversioned, and one with a line keeps its committed value.
     """
     text = Path(skill_md).read_bytes().decode("utf-8")
-    if frontmatter_version(text) is None:
+    if version is None:
         return None, None
-    version = resolve_release_version(changelog)
     previous = frontmatter_version(text)
-    stamped = stamp_frontmatter_version(text, version)
+    stamped = stamp_frontmatter_version(text, version, insert_missing=True)
     if stamped == text:
         return version, None
     Path(skill_md).write_bytes(stamped.encode("utf-8"))

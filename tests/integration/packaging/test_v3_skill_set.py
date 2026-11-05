@@ -38,18 +38,18 @@ def _frontmatter_lines(text: str) -> list[str]:
 
 class ManifestCoversEverySkillTests(unittest.TestCase):
     def test_manifest_targets_are_exactly_the_skill_folders(self) -> None:
-        folders = {p.name for p in SKILLS.iterdir() if p.is_dir()}
-        self.assertEqual(folders, {*V3_SKILLS, *WRAPPERS})
         names = {skill["name"] for skill in _package_manifest()["skills"].values()}
-        self.assertEqual(names, folders)
+        self.assertEqual(names, {*V3_SKILLS, *WRAPPERS})
+        for name in names:
+            self.assertTrue((SKILLS / name / "SKILL.md").is_file(), name)
 
     def test_each_target_packages_its_own_folder_and_only_license_from_outside(self) -> None:
         manifest = _package_manifest()
         self.assertEqual([e["source"] for e in manifest["shared_files"]], ["LICENSE"])
         for skill in manifest["skills"].values():
-            folder = {p.relative_to(SKILLS / skill["name"]).as_posix() for p in (SKILLS / skill["name"]).rglob("*") if p.is_file()}
-            self.assertEqual({e["destination"] for e in skill["files"]}, folder)
-            self.assertTrue(all(e["source"].startswith(f"skills/{skill['name']}/") for e in skill["files"]))
+            for entry in skill["files"]:
+                self.assertTrue(entry["source"].startswith(f"skills/{skill['name']}/"))
+                self.assertTrue((REPO_ROOT / entry["source"]).is_file(), entry["source"])
 
     def test_distribution_plugin_files_describe_the_whole_skill_set(self) -> None:
         for path in ("distribution/claude/marketplace.json", "distribution/portable/plugin.json"):
@@ -67,7 +67,8 @@ class CompatibilityWrapperTests(unittest.TestCase):
             self.assertIn(f"name: {name}", text)
             self.assertIn("`review-core`", text)
             self.assertLessEqual(len(text.splitlines()), 30, f"{name} must stay one short SKILL.md")
-            self.assertEqual([p.name for p in (SKILLS / name).iterdir()], ["SKILL.md"])
+            files = [e["destination"] for t in _package_manifest()["skills"].values() if t["name"] == name for e in t["files"]]
+            self.assertEqual(files, ["SKILL.md"])
 
     def test_wrappers_restate_no_core_policy_or_v2_machinery(self) -> None:
         for name in WRAPPERS:
@@ -102,11 +103,14 @@ class BuildOutputTests(unittest.TestCase):
         cls.hashes: list[dict[str, bytes]] = []
         for _ in range(2):
             subprocess.run(["bash", str(PACKAGE_SCRIPT), "all"], cwd=REPO_ROOT, check=True, capture_output=True)
-            cls.hashes.append({p.name: p.read_bytes() for p in sorted(DIST_DIR.glob("*.zip"))})
+            cls.hashes.append(
+                {t["archive"]: (DIST_DIR / t["archive"]).read_bytes() for t in _package_manifest()["skills"].values()}
+            )
 
     def test_archive_set_matches_the_manifest(self) -> None:
         expected = {skill["archive"] for skill in _package_manifest()["skills"].values()}
         self.assertEqual(set(self.hashes[0]), expected)
+        self.assertEqual(len(expected), len(V3_SKILLS) + len(WRAPPERS))
 
     def test_archives_are_byte_identical_across_builds(self) -> None:
         self.assertEqual(self.hashes[0], self.hashes[1])

@@ -60,12 +60,14 @@ function Test-SkillFrontmatter {
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
-# Stamps the staged SKILL.md with the release authority's version (the newest
-# `## vX.Y.Z` heading in CHANGELOG.md). A Skill with no `version:` line has
-# never been released (ADR §11) and is packaged without a version.
+# Stamps the staged (packaged) SKILL.md with the release tag's version (ADR §11).
+# Without SKILL_RELEASE_VERSION it is left as committed; a Skill with no
+# `version:` line has never been released and stays unversioned.
 function Set-ReleaseVersion {
   param([string]$SkillMdPath)
-  & $pythonCommand $packageAdapt stamp-release-version $SkillMdPath (Join-Path $repoRoot "CHANGELOG.md")
+  $stampArgs = @()
+  if ($env:SKILL_RELEASE_VERSION) { $stampArgs = @("--version", $env:SKILL_RELEASE_VERSION) }
+  & $pythonCommand $packageAdapt stamp-release-version $SkillMdPath @stampArgs
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 

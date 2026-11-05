@@ -13,67 +13,12 @@ import tests.unit.package_domain._shared  # noqa: F401 - sys.path wiring
 
 from package_domain import main
 from package_domain.version import (
-    ReleaseVersionError,
     frontmatter_version,
-    newest_release_version,
-    resolve_release_version,
     stamp_frontmatter_version,
-    stamp_skill_md_from_authority,
+    stamp_skill_md,
 )
 
-CHANGELOG = """\
-# Changelog
-
-## Unreleased
-
-### Fixed
-
-- Something pending (#1).
-
-## v1.54.0 — 2026-09-20
-
-### Fixed
-
-- Shipped.
-
-## v1.53.0 — 2026-09-18
-"""
-
 SKILL = "---\nname: x\nversion: 1.50.2\ndescription: d\n---\n\nBody.\n"
-
-
-class NewestReleaseVersionTests(unittest.TestCase):
-    def test_takes_the_newest_release_heading_and_ignores_unreleased(self) -> None:
-        self.assertEqual(newest_release_version(CHANGELOG), "1.54.0")
-
-    def test_no_release_heading_is_none(self) -> None:
-        self.assertIsNone(newest_release_version("# Changelog\n\n## Unreleased\n\n- x\n"))
-
-    def test_heading_must_be_a_strict_version(self) -> None:
-        for text in ("## v1.2\n", "## v01.2.3\n", "## v1.2.3-rc1\n", "## 1.2.3\n", "### v1.2.3\n"):
-            self.assertIsNone(newest_release_version(text), text)
-
-
-class ResolveReleaseVersionTests(unittest.TestCase):
-    def setUp(self) -> None:
-        tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(tmp.cleanup)
-        self.dir = Path(tmp.name)
-
-    def test_resolves_from_the_file(self) -> None:
-        path = self.dir / "CHANGELOG.md"
-        path.write_text(CHANGELOG, encoding="utf-8")
-        self.assertEqual(resolve_release_version(path), "1.54.0")
-
-    def test_missing_file_fails_closed(self) -> None:
-        with self.assertRaises(ReleaseVersionError):
-            resolve_release_version(self.dir / "CHANGELOG.md")
-
-    def test_file_without_a_release_heading_fails_closed(self) -> None:
-        path = self.dir / "CHANGELOG.md"
-        path.write_text("# Changelog\n\n## Unreleased\n", encoding="utf-8")
-        with self.assertRaises(ReleaseVersionError):
-            resolve_release_version(path)
 
 
 class StampTests(unittest.TestCase):
@@ -89,6 +34,15 @@ class StampTests(unittest.TestCase):
     def test_refuses_a_skill_md_without_a_version_line(self) -> None:
         with self.assertRaises(ValueError):
             stamp_frontmatter_version("---\nname: x\n---\nBody\n", "1.54.0")
+
+
+class InsertMissingTests(unittest.TestCase):
+    def test_a_missing_version_line_is_only_inserted_when_asked(self) -> None:
+        source = "---\nname: x\ndescription: y\n---\nBody\n"
+        with self.assertRaises(ValueError):
+            stamp_frontmatter_version(source, "3.0.0")
+        stamped = stamp_frontmatter_version(source, "3.0.0", insert_missing=True)
+        self.assertEqual(stamp_frontmatter_version(stamped, "3.1.0", insert_missing=True).count("version:"), 1)
 
 
 class CrlfTests(unittest.TestCase):
@@ -108,85 +62,69 @@ class CrlfTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             stamp_frontmatter_version("---\r\nname: x\r\n---\r\nBody\r\n", "1.54.0")
 
-    def test_newest_release_version_reads_a_crlf_changelog(self) -> None:
-        self.assertEqual(newest_release_version(CHANGELOG.replace("\n", "\r\n")), "1.54.0")
-
     def test_the_cli_stamps_a_crlf_skill_md_byte_exactly(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            skill, changelog = Path(tmp) / "SKILL.md", Path(tmp) / "CHANGELOG.md"
+            skill = Path(tmp) / "SKILL.md"
             skill.write_bytes(self.CRLF_SKILL.encode("utf-8"))
-            changelog.write_bytes(CHANGELOG.replace("\n", "\r\n").encode("utf-8"))
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                code = main(["stamp-release-version", str(skill), str(changelog)])
+                code = main(["stamp-release-version", str(skill), "--version", "1.54.0"])
             self.assertEqual(code, 0)
             self.assertEqual(skill.read_bytes(), self.CRLF_SKILL.replace("1.50.2", "1.54.0").encode("utf-8"))
 
 
-class StampFromAuthorityTests(unittest.TestCase):
+class StampPackagedCopyTests(unittest.TestCase):
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.dir = Path(tmp.name)
-        self.skill = self.dir / "SKILL.md"
-        self.changelog = self.dir / "CHANGELOG.md"
+        self.skill = Path(tmp.name) / "SKILL.md"
         self.skill.write_text(SKILL, encoding="utf-8")
-        self.changelog.write_text(CHANGELOG, encoding="utf-8")
 
-    def _run(self) -> tuple[int, str, str]:
-        out, err = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = main(["stamp-release-version", str(self.skill), str(self.changelog)])
-        return code, out.getvalue(), err.getvalue()
+    def _run(self, *extra: str) -> tuple[int, str]:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = main(["stamp-release-version", str(self.skill), *extra])
+        return code, out.getvalue()
 
-    def test_a_stale_committed_version_is_replaced_with_a_note(self) -> None:
-        version, previous = stamp_skill_md_from_authority(self.skill, self.changelog)
-        self.assertEqual((version, previous), ("1.54.0", "1.50.2"))
-        self.assertEqual(frontmatter_version(self.skill.read_text(encoding="utf-8")), "1.54.0")
+    def test_the_release_tag_version_replaces_any_committed_value(self) -> None:
+        # Any later tag stamps every packaged Skill with that tag's version, regardless of the source value.
+        for tag_version in ("3.0.0", "3.1.0"):
+            self.skill.write_text(SKILL, encoding="utf-8")
+            self.assertEqual(stamp_skill_md(self.skill, tag_version), (tag_version, "1.50.2"))
+            self.assertEqual(frontmatter_version(self.skill.read_text(encoding="utf-8")), tag_version)
 
-    def test_cli_reports_the_stale_value_and_exits_zero(self) -> None:
-        code, out, _ = self._run()
+    def test_cli_notes_a_differing_committed_value_and_exits_zero(self) -> None:
+        code, out = self._run("--version", "1.54.0")
         self.assertEqual(code, 0)
-        self.assertIn("note: committed SKILL.md version 1.50.2 differs", out)
-        self.assertIn("packaged with 1.54.0", out)
+        self.assertIn("note: committed SKILL.md version 1.50.2 differs from the release tag 1.54.0", out)
 
     def test_a_matching_version_is_left_untouched_and_not_noted(self) -> None:
-        self.skill.write_text(SKILL.replace("1.50.2", "1.54.0"), encoding="utf-8")
         before = self.skill.read_bytes()
-        code, out, _ = self._run()
+        code, out = self._run("--version", "1.50.2")
         self.assertEqual(code, 0)
         self.assertNotIn("note:", out)
         self.assertEqual(self.skill.read_bytes(), before)
 
-    def test_cli_fails_closed_without_a_release_authority(self) -> None:
-        self.changelog.unlink()
-        code, _, err = self._run()
-        self.assertEqual(code, 1)
-        self.assertIn("release authority", err)
-        self.assertEqual(frontmatter_version(self.skill.read_text(encoding="utf-8")), "1.50.2")
+    def test_without_a_release_version_the_file_is_left_as_committed(self) -> None:
+        before = self.skill.read_bytes()
+        self.assertEqual(self._run()[0], 0)
+        self.assertEqual(self.skill.read_bytes(), before)
 
-    def test_cli_fails_closed_when_the_changelog_has_no_release_heading(self) -> None:
-        self.changelog.write_text("# Changelog\n\n## Unreleased\n", encoding="utf-8")
-        code, _, err = self._run()
-        self.assertEqual(code, 1)
-        self.assertIn("no '## vX.Y.Z' release heading", err)
-
-    def test_a_skill_md_without_a_version_line_is_packaged_without_a_version(self) -> None:
-        # ADR §11: a never-released v3 Skill must not borrow the newest v2.x heading.
-        source = "---\nname: x\n---\nBody\n"
+    def test_a_never_released_skill_stays_unversioned_without_a_release_version(self) -> None:
+        # ADR §11: no v2.x label borrowed from CHANGELOG, Git or anywhere else.
+        source = "---\nname: x\ndescription: y\n---\nBody\n"
         self.skill.write_text(source, encoding="utf-8")
-        code, out, _ = self._run()
-        self.assertEqual(code, 0)
-        self.assertIn("never released", out)
+        self.assertEqual(stamp_skill_md(self.skill, None), (None, None))
         self.assertEqual(self.skill.read_text(encoding="utf-8"), source)
 
-    def test_a_missing_version_line_is_only_inserted_when_asked(self) -> None:
-        source = "---\nname: x\ndescription: y\n---\nBody\n"
-        with self.assertRaises(ValueError):
-            stamp_frontmatter_version(source, "3.0.0")
-        stamped = stamp_frontmatter_version(source, "3.0.0", insert_missing=True)
-        self.assertEqual(stamped, "---\nname: x\nversion: 3.0.0\ndescription: y\n---\nBody\n")
-        self.assertEqual(stamp_frontmatter_version(stamped, "3.0.1", insert_missing=True).count("version:"), 1)
+    def test_the_release_tag_version_is_inserted_where_the_line_is_missing(self) -> None:
+        self.skill.write_text("---\nname: x\ndescription: y\n---\nBody\n", encoding="utf-8")
+        self.assertEqual(stamp_skill_md(self.skill, "3.0.0"), ("3.0.0", None))
+        self.assertEqual(self.skill.read_text(encoding="utf-8"), "---\nname: x\nversion: 3.0.0\ndescription: y\n---\nBody\n")
+
+    def test_a_non_strict_release_version_is_refused(self) -> None:
+        code, _ = self._run("--version", "v3.0.0")
+        self.assertEqual(code, 1)
 
 
 if __name__ == "__main__":
