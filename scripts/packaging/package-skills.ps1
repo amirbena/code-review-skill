@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 <#
-  Package one or both Code Review Agent Skills into self-contained,
+  Package the Code Review Agent Skills declared in package-manifest.json into self-contained,
   standalone distributable archives, using explicit allowlists (never the
   whole repository). Each archive has its own SKILL.md at the archive
   ROOT (not nested under skills/<name>/), so a consumer never needs to
@@ -13,13 +13,11 @@
   scripts/packaging/package-skills.sh.
 
   Usage:
-    ./scripts/packaging/package-skills.ps1 local
-    ./scripts/packaging/package-skills.ps1 github
+    ./scripts/packaging/package-skills.ps1 <manifest target>
     ./scripts/packaging/package-skills.ps1 all      # default
 #>
 
 param(
-  [ValidateSet("local", "github", "all")]
   [string]$Skill = "all"
 )
 
@@ -201,12 +199,17 @@ $script:builtSkills = @()
 Write-Host "Repository root: $repoRoot"
 New-Item -ItemType Directory -Path $distDir, $treesRoot -Force | Out-Null
 
-if ($Skill -eq "local" -or $Skill -eq "all") {
-  Package-Skill -PackageTarget "local"
+$manifestTargets = @($packageManifest.skills.PSObject.Properties.Name)
+if ($Skill -ne "all") {
+  if ($manifestTargets -notcontains $Skill) {
+    Write-Error "unknown target '$Skill' (not in package-manifest.json)"
+    exit 1
+  }
+  $manifestTargets = @($Skill)
 }
 
-if ($Skill -eq "github" -or $Skill -eq "all") {
-  Package-Skill -PackageTarget "github"
+foreach ($manifestTarget in $manifestTargets) {
+  Package-Skill -PackageTarget $manifestTarget
 }
 
 & $pythonCommand $packageAdapt write-tree-manifest $distDir @($script:builtSkills)
