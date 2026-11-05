@@ -1,7 +1,7 @@
 """review-publish-github guarantees against a minimal in-memory PR (#844).
 
 The fake enforces only what GitHub enforces; the Skill's own rules are
-checked as text in tests/unit/review/publish. Run with:
+checked as text in tests/unit/review/core. Run with:
     python3 -m unittest tests.integration.github.test_review_publish_github
 """
 

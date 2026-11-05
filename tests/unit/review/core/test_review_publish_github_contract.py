@@ -4,7 +4,7 @@ Contract: docs/v3-architecture/adr-v3-review-core.md, sections 5, 5.1 and 7 (S7)
 These tests check ownership and wiring, not wording.
 
 Run with:
-    python3 -m unittest tests.unit.review.publish.test_review_publish_github_contract
+    python3 -m unittest tests.unit.review.core.test_review_publish_github_contract
 """
 
 from __future__ import annotations
