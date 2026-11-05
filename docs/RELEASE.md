@@ -542,9 +542,10 @@ v3 work flows `feature → release/v3 → main → v3.0.0` (#852). PR checks
   already in the baseline tag) to `## Unreleased` beside the cutover's own
   entry, giving one v3.0.0. Missing or invalid child intent, or 250+ commits
   (GitHub's listing cap), fails closed.
-- **Syncing `main → release/v3`** uses a merge commit. Its commits are
-  excluded from the notes (already released). The sync PR's `release-gate`
-  may report missing intent; no required check blocks it on `release/v3`.
+- **Syncing `main → release/v3`** uses a merge commit. The sync PR (head
+  `main` in this repository) and its commits are excluded from the notes
+  (already released). The sync PR's `release-gate` may report missing
+  intent; no required check blocks it on `release/v3`.
 
 ## Repository configuration
 

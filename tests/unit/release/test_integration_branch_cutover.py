@@ -33,6 +33,7 @@ from release_lib.semver_version import derive_next_version  # noqa: E402
 CUTOVER_SHA = "c" * 40
 CHILD_A, CHILD_B, CHILD_DOCS, SYNC_PR = "a" * 40, "b" * 40, "d" * 40, "e" * 40
 RELEASED = "f" * 40
+SYNC_MERGE = "5" * 40
 
 
 def _cutover_pr(body: str) -> dict:
@@ -130,6 +131,18 @@ class CutoverExpansionTests(_PatchedRepoCase):
         self._use(listing=[("%040x" % i, f"x (#{1000 + i})") for i in range(250)])
         with self.assertRaises(ChangelogGenerationError):
             collect_entries(self.root, "v2.4.0")
+
+    def test_main_sync_pull_request_merged_into_branch_is_not_expanded(self) -> None:
+        for body in ("no intent here", _body("none"), _body("Fixed", "Already released")):
+            with self.subTest(body=body):
+                repo = self._use()
+                sync = _child(701, SYNC_MERGE, body)
+                sync["head"] = {"ref": "main", "repo": {"full_name": "o/r"}}
+                sync["base"]["repo"] = {"full_name": "o/r"}
+                repo.prs[701] = sync
+                repo.files[701] = [SKILL]
+                repo.listing.insert(1, (SYNC_MERGE, "Merge pull request #701 from o/main"))
+                self.assertEqual(sorted(e.pr_number for e in collect_entries(self.root, "v2.4.0")), [11, 12, 900])
 
     def test_fork_branch_named_like_an_integration_branch_is_not_expanded(self) -> None:
         repo = self._use()

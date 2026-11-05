@@ -104,7 +104,8 @@ def collect_entries(repo_root: Path, baseline: str) -> list[GeneratedEntry]:
         repo_name = (head.get("repo") or {}).get("full_name")
         base_repo = ((pr.get("base") or {}).get("repo") or {}).get("full_name")
         if head.get("ref") in INTEGRATION_BRANCHES and repo_name and repo_name == base_repo:
-            _expand_cutover(repo_root, baseline, number, head["ref"], entries, problems)
+            sync_head = ((pr.get("base") or {}).get("ref"), base_repo)
+            _expand_cutover(repo_root, baseline, number, head["ref"], sync_head, entries, problems)
     if problems:
         raise ChangelogGenerationError(problems)
     return entries
@@ -115,14 +116,16 @@ def _expand_cutover(
     baseline: str,
     cutover: int,
     branch: str,
+    sync_head: tuple[str | None, str | None],
     entries: list[GeneratedEntry],
     problems: list[str],
 ) -> None:
     """Add the release intent of the child PRs squash-merged into `branch`.
 
-    Commits already reachable from `baseline` (a main -> branch sync) and
-    PRs based on anything but `branch` are released or counted elsewhere and
-    are skipped; a `none` or non-release-worthy child ships nothing.
+    Commits already reachable from `baseline`, PRs based on anything but
+    `branch`, and main -> branch sync PRs (head is `sync_head`, the cutover's
+    own base ref and repository) are released or counted elsewhere and are
+    skipped; a `none` or non-release-worthy child ships nothing.
     """
     try:
         commits = gitgh.pull_request_commits(repo_root, cutover)
@@ -143,6 +146,9 @@ def _expand_cutover(
             problems.append(f"PR #{number}: could not be read from the GitHub API")
             continue
         if (pr.get("base") or {}).get("ref") != branch:
+            continue
+        head = pr.get("head") or {}
+        if (head.get("ref"), (head.get("repo") or {}).get("full_name")) == sync_head:
             continue
         if not pr.get("merged_at") or pr.get("merge_commit_sha") != sha:
             problems.append(f"PR #{number}: is not the merged pull request behind commit {sha[:12]} on {branch}")
