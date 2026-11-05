@@ -108,8 +108,17 @@ def _git(*args: str) -> str:
     ).stdout
 
 
+# The frozen v2 archive (Issue #848) keeps its original bytes, links and old-tree
+# references on purpose; every active file is still checked.
+FROZEN_ARCHIVE = "benchmark/corpus-v2/"
+
+
 def _tracked() -> list[str]:
-    return [p for p in _git("ls-files").splitlines() if (REPO_ROOT / p).is_file()]
+    return [
+        p
+        for p in _git("ls-files").splitlines()
+        if (REPO_ROOT / p).is_file() and not p.startswith(FROZEN_ARCHIVE)
+    ]
 
 
 def _text(rel: str) -> str | None:

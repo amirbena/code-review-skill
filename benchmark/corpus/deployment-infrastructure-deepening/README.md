@@ -7,7 +7,7 @@ capability delivered by
 [#742](https://github.com/amirbena/code-review-skill/issues/742) under
 parent [#740](https://github.com/amirbena/code-review-skill/issues/740).
 It is a **focused sub-corpus** of
-[`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
+[`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures; it measures the capability after it exists and does not define,
 gate, or redesign it. The capability is specified in
 `../../../shared/policies/deployment-infrastructure-deepening.md`
@@ -74,7 +74,7 @@ a property owned by the dependency/supply-chain pass).
   comprehensive-lane run, which discovers this directory automatically;
   record that run's result in the scheduled-benchmark history, and file a
   focused follow-up for any genuine defect it surfaces.
-- **Context gap is not directly assertable.** `benchmark-case/v2` has no
+- **Context gap is not directly assertable.** `benchmark-case/v3` has no
   key for an expected Context gap, so the db-resize case pins the
   observable part (no blocking finding, no unsupported outage claim). That
   a `deployment validation evidence gap` is emitted is asserted by the

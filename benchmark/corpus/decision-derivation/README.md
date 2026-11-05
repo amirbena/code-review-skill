@@ -2,7 +2,7 @@
 
 Repository-development artifact for GitHub Issue
 [#450](https://github.com/amirbena/code-review-skill/issues/450). This is
-a focused [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md) sub-corpus that
+a focused [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md) sub-corpus that
 proves both directions of the mechanical severity → decision path defined
 in
 `../../../shared/policies/severity.md`,
@@ -46,7 +46,7 @@ Both directions live in this one directory because they share one domain
 Fixture-name prefixes tell them apart: `dd-blocking-*` is #350's, every
 other `dd-*` fixture is #450's.
 
-## Why this *is* a `benchmark-case/v2` corpus
+## Why this *is* a `benchmark-case/v3` corpus
 
 Unlike `../verdict-consistency/` (which
 starts from an already-finalized decision and a downstream signal, with no
@@ -54,7 +54,7 @@ patch and no finding — a data-driven reference-fixture corpus), this
 corpus is about **derivation correctness**: does reviewing a *real code
 change* end-to-end through the packaged Skill produce the right findings
 and the right mechanically-derived decision? That is exactly what
-`benchmark-case/v2` (self-contained inline patch + expected findings +
+`benchmark-case/v3` (self-contained inline patch + expected findings +
 expected decision) is for, per
 [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) — the same format
 [`../candidate-finding-validation/`](../candidate-finding-validation/README.md)
@@ -145,7 +145,7 @@ tests' equivalent.
 
 ## On Skill coverage (local-code-review and github-pr-review)
 
-`benchmark-case/v2`'s `expected.decision` vocabulary is deliberately
+`benchmark-case/v3`'s `expected.decision` vocabulary is deliberately
 Skill-neutral (`clean` / `changes-required` — see
 [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §1): `clean` is
 `local-code-review`'s `REVIEW CLEAN` **and** `github-pr-review`'s
@@ -163,7 +163,7 @@ production reviewer adapter this repository's benchmark tooling has for
 any corpus (see its own module docstring), and no equivalent
 `github-pr-review` production adapter exists yet. That is an existing gap
 in the benchmark runtime, not one introduced by this corpus: no other
-`benchmark-case/v2` corpus in this repository has a real end-to-end
+`benchmark-case/v3` corpus in this repository has a real end-to-end
 `github-pr-review` run either. Extending the production adapter to also
 drive `github-pr-review`'s approving-review-event path is future
 benchmark-runtime work, not part of #450's scope (#450 does not touch

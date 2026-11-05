@@ -8,7 +8,7 @@
 # right per #450's acceptance criteria rather than only inferring the
 # empty-set behavior from the two P2-only cases alongside it.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: dd-zero-findings-clean
 title: "New format_percentage helper is correct, safe, and has nothing to flag"
@@ -31,6 +31,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [no-op]
   rationale: >-

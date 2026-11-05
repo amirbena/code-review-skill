@@ -25,7 +25,7 @@
 # resolves nothing) is defined in docs/findings/finding-lifecycle-contract.md
 # §4 and skills/github-pr-review/policies/stateful-delta-rereview.md §3.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: consolidation-rereview-reconciles-to-authoritative
 title: "Re-review consolidates two prior per-call-site findings into one authoritative finding"
@@ -130,6 +130,7 @@ expected:
       defect_kind: missing-test
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [security]
   rationale: >-

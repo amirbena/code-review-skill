@@ -18,7 +18,7 @@ concern lives in the file named for it.
 | [`fixture-format.md`](fixture-format.md) | The canonical machine-readable format for a single benchmark case — case identity, input (inline patch or repository reference), expected findings, expected severity, expected location detail, the four typed variance constructs (same-defect alternatives, alternative findings, optional findings, permitted severity variance), required metadata including its mandatory canonical taxonomy classification, schema/versioning, and fail-closed validation. | [#50](https://github.com/amirbena/code-review-skill/issues/50) |
 | [`taxonomy.md`](taxonomy.md) | The canonical, closed, alias-free benchmark candidate taxonomy — four dimensions (`capability`, `policy_contract`, `risk_mode`, `affected_surface`) each with an explicit `unclassified` member, corpus case classification metadata and its fail-closed validation, the one bounded schema-constrained PR-diff classification model call, and the deterministic non-LLM inverted index (`corpus-index.json`) that lets PR-time candidate selection narrow the corpus by lookup instead of a full scan. | [#333](https://github.com/amirbena/code-review-skill/issues/333) |
 | [`selection.md`](selection.md) | The deterministic Top-K benchmark selector over #333's candidate pool — the weighted Case Relevance Score and its `primary`/`secondary`/`not-eligible` bands, the distinct Selection Coverage Score and its 60% golden threshold, the greedy coverage-maximizing bounded Top-K algorithm (`K_DEFAULT`/`K_MAX`), the explicit non-silent `insufficient-coverage` outcome, and the machine-readable explainability object published per run. Ships informational-only. | [#334](https://github.com/amirbena/code-review-skill/issues/334) |
-| [`../../benchmark/corpus/README.md`](../../benchmark/corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v2` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
+| [`../../benchmark/corpus/README.md`](../../benchmark/corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v3` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | [`runner-contract.md`](runner-contract.md) | How a benchmark run executes the reviewer over the corpus — per-case isolation into a disposable workspace, the repository-safety invariants for every protected source checkout, cleanup on success and failure, the machine-readable per-case result shape, single-case vs. whole-corpus runs, and the exit-status rule. | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | [`regression-report.md`](regression-report.md) | How a candidate run is compared against a stored baseline — the baseline result artifact, the corpus-identity guard, the per-case and aggregate deltas, the metric-free rule that separates a regression from an improvement, deterministic output, and the deliberate baseline-refresh step. | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
 | [`match-criteria.md`](match-criteria.md) | When a produced review finding matches an expected benchmark finding — the two match axes (location, defect), the three-valued `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how `alternatives` / `any_of` / `match: optional` resolve. The pairing relation the [#41](https://github.com/amirbena/code-review-skill/issues/41) quality metrics are built on. | [#54](https://github.com/amirbena/code-review-skill/issues/54) |
@@ -62,7 +62,7 @@ report ([#53](https://github.com/amirbena/code-review-skill/issues/53)) is
 ## Worked example
 
 [`../../benchmark/examples/example-case.yaml`](../../benchmark/examples/example-case.yaml) is one complete,
-validated `benchmark-case/v2` fixture referenced by `fixture-format.md`
+validated `benchmark-case/v3` fixture referenced by `fixture-format.md`
 §12. It is an illustrative reference for the format, **not** a corpus case
 (the corpus is #51). Its automated validation and the negative tests for
 the format's rejection rules live in
@@ -71,7 +71,7 @@ the format's rejection rules live in
 ## Corpus
 
 [`corpus/`](../../benchmark/corpus/README.md) holds the initial benchmark corpus (#51):
-one crafted `benchmark-case/v2` fixture per review category, each a
+one crafted `benchmark-case/v3` fixture per review category, each a
 self-contained inline patch with its pre-image and expected findings. The
 corpus is validated by
 [`../../tests/unit/benchmark/test_benchmark_corpus.py`](../../tests/unit/benchmark/test_benchmark_corpus.py)

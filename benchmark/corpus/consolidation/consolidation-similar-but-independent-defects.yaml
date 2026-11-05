@@ -16,7 +16,7 @@
 # over-merging distinct defects that merely rhyme (#177 non-goal:
 # "Suppressing distinct defects that merely look similar").
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: consolidation-similar-but-independent-defects
 title: "Two look-alike off-by-one bugs in unrelated modules stay separate findings"
@@ -81,6 +81,7 @@ expected:
       defect_kind: off-by-one
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

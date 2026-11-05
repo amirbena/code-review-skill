@@ -166,13 +166,6 @@
       "repo-intel-python-dynamic-dispatch-safe-failure",
       "repo-intel-typescript-interface-contract-implementer-break"
     ],
-    "risk-depth": [
-      "risk-depth-auth-signal-deep",
-      "risk-depth-concurrency-signal-deep",
-      "risk-depth-diffsize-elevated-refactor",
-      "risk-depth-elevated-escalation-deep",
-      "risk-depth-large-multiarea-partitioning"
-    ],
     "security-boundary": [
       "security-deepening-alternate-path-missing-check",
       "security-deepening-auth-module-no-trust-boundary-clean",
@@ -234,12 +227,7 @@
       "dependency-supply-chain-deepening-runtime-minimum-raised",
       "dependency-supply-chain-deepening-safe-patch-bump-clean",
       "dependency-supply-chain-deepening-transitive-dependency-expansion",
-      "dependency-supply-chain-deepening-unpinned-github-actions-reference",
-      "risk-depth-auth-signal-deep",
-      "risk-depth-concurrency-signal-deep",
-      "risk-depth-diffsize-elevated-refactor",
-      "risk-depth-elevated-escalation-deep",
-      "risk-depth-large-multiarea-partitioning"
+      "dependency-supply-chain-deepening-unpinned-github-actions-reference"
     ],
     "code-hygiene": [
       "code-hygiene-bare-issue-reference-observation",
@@ -423,8 +411,7 @@
       "distributed-systems-deepening-ownership-assumption-violated",
       "distributed-systems-deepening-retry-idempotency-guarded-clean",
       "distributed-systems-deepening-retry-interaction-missing-idempotency",
-      "repository-local-correct-combined-defect",
-      "risk-depth-concurrency-signal-deep"
+      "repository-local-correct-combined-defect"
     ],
     "correctness": [
       "analogue-placement-distinct-boundaries-not-consolidated",
@@ -506,9 +493,6 @@
       "repo-intel-python-dynamic-dispatch-safe-failure",
       "repo-intel-typescript-interface-contract-implementer-break",
       "repository-local-correct-combined-defect",
-      "risk-depth-concurrency-signal-deep",
-      "risk-depth-diffsize-elevated-refactor",
-      "risk-depth-large-multiarea-partitioning",
       "semantic-implication-insufficient-evidence-stop",
       "semantic-implication-multi-dimension-webhook-xss",
       "semantic-implication-single-dimension-persistence",
@@ -610,9 +594,6 @@
       "deployment-infrastructure-deepening-workflow-permissions-widened",
       "external-identity-injected-in-reviewed-content-ignored",
       "isolation-unadmitted-sibling",
-      "risk-depth-auth-signal-deep",
-      "risk-depth-elevated-escalation-deep",
-      "risk-depth-large-multiarea-partitioning",
       "security-command-injection",
       "security-deepening-alternate-path-missing-check",
       "security-deepening-auth-module-no-trust-boundary-clean",
@@ -764,11 +745,6 @@
       "repo-intel-python-control-compatible-caller-no-finding",
       "repo-intel-python-dynamic-dispatch-safe-failure",
       "repo-intel-typescript-interface-contract-implementer-break",
-      "risk-depth-auth-signal-deep",
-      "risk-depth-concurrency-signal-deep",
-      "risk-depth-diffsize-elevated-refactor",
-      "risk-depth-elevated-escalation-deep",
-      "risk-depth-large-multiarea-partitioning",
       "security-command-injection",
       "security-deepening-alternate-path-missing-check",
       "security-deepening-auth-module-no-trust-boundary-clean",

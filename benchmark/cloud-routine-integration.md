@@ -87,7 +87,7 @@ discovery added by #431
 | `smoke` | one or a few explicit `--case-id` values | sanity-check the Routine itself |
 | `selected` | whatever `--case-id` list is handed to it (e.g. a future #334 Top-K output) | PR-time-adjacent observability, never a merge gate |
 | `sentinel` | none — runs the whole `--corpus-dir` (non-recursive: the 4 permanent canonical cases) | scheduled sentinel lane, maximum gap ≤ 96 h (#431, A11) |
-| `comprehensive` | none — runs every `benchmark-case/v2` fixture discovered recursively under `--corpus-dir` | scheduled comprehensive lane, maximum gap ≤ 8 d (#431, A11) |
+| `comprehensive` | none — runs every `benchmark-case/v3` fixture discovered recursively under `--corpus-dir` | scheduled comprehensive lane, maximum gap ≤ 8 d (#431, A11) |
 | `full` | none — **deprecated fixed synonym for `sentinel`** (#431) | kept, unchanged in behavior, only for backward compatibility with existing Routine prompt configuration; emits a stderr deprecation notice; new configuration must use `sentinel` explicitly. Never means `comprehensive`. |
 | `auth-check` | none — no benchmark run | handoff smoke test (§5) |
 

@@ -13,7 +13,7 @@
 # found no relevant test; see ./README.md "What the baseline can and cannot
 # express".
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: relrecall-affected-test-external-cases-unresolvable
 title: "Free-shipping threshold raised; the contract test's cases come from a directory outside the repository"
@@ -62,6 +62,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [regression]
   rationale: >-

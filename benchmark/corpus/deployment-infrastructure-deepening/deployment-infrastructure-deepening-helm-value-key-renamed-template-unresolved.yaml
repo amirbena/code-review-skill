@@ -5,7 +5,7 @@
 # Configuration-compatibility problem: one artifact defines a value key,
 # another consumes it, and only the defining side is renamed.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: deployment-infrastructure-deepening-helm-value-key-renamed-template-unresolved
 title: "values.yaml renames image.tag to image.version while templates/deployment.yaml still reads .Values.image.tag"
@@ -71,6 +71,7 @@ expected:
       defect_kind: value-key-no-longer-resolves
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

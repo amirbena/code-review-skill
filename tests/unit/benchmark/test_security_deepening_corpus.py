@@ -3,7 +3,7 @@
 (Issue #271, parent #83, grandparent #82).
 
 The sub-corpus is ``benchmark/corpus/security-deepening/*.yaml``: a
-small, focused set of ``benchmark-case/v2`` fixtures pinning representative
+small, focused set of ``benchmark-case/v3`` fixtures pinning representative
 Security deepening outcomes as follow-up quality hardening for the
 capability #83 already defines — it validates domain correctness after the
 capability exists and never redesigns it.

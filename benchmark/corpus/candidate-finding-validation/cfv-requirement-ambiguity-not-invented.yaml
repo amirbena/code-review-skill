@@ -18,7 +18,7 @@
 # Expected: one required P2 finding classified as requirement ambiguity;
 # no P0/P1.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: cfv-requirement-ambiguity-not-invented
 title: "partial_ok reservation is silent on the zero-available-stock edge case: requirement ambiguity, not an invented P0/P1"
@@ -72,6 +72,7 @@ expected:
       defect_kind: requirement-ambiguity
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

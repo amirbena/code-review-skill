@@ -1,0 +1,86 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# pricing/discount.py (base, unchanged) documents that compute_discount
+# returns None for an unrecognized coupon and that callers are
+# responsible for handling that. billing/invoice.py's new render_total
+# does not guard against None and crashes formatting it as currency. The
+# claim here is about *unsafe handling of an otherwise-valid upstream
+# state*, so the fix/action location stays at the downstream handling
+# site -- not mechanically moved upstream to pricing/discount.py, which
+# is behaving exactly per its documented contract.
+#
+# Expected: ONE required finding anchored in billing/invoice.py;
+# pricing/discount.py never becomes an anchor.
+
+format: benchmark-case/v2
+
+id: finding-placement-downstream-unsafe-handling
+title: "invoice.py does not guard compute_discount's documented None result for an unrecognized coupon"
+
+input:
+  patch: |
+    diff --git a/billing/invoice.py b/billing/invoice.py
+    new file mode 100644
+    index 0000000..2b3c4d5
+    --- /dev/null
+    +++ b/billing/invoice.py
+    @@ -0,0 +1,6 @@
+    +from pricing.discount import compute_discount
+    +
+    +
+    +def render_total(price: float, coupon: str) -> str:
+    +    discount = compute_discount(price, coupon)
+    +    return f"Total: ${discount:.2f}"
+  base:
+    pricing/discount.py: |
+      KNOWN_COUPONS = {"SAVE10": 10, "SAVE20": 20}
+
+
+      def compute_discount(price: float, coupon: str):
+          """Returns the discount amount for a recognized coupon, or None
+          for an unrecognized one. Callers are responsible for handling a
+          None result (e.g. an unrecognized promo code); this function
+          never raises merely because a coupon is unknown.
+          """
+          if coupon not in KNOWN_COUPONS:
+              return None
+          return price * (1 - KNOWN_COUPONS[coupon] / 100)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: invoice-does-not-guard-none-discount
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: billing/invoice.py
+        symbol: render_total
+        anchor: 'return f"Total: ${discount:.2f}"'
+      claim: >-
+        billing/invoice.py's render_total does not handle
+        compute_discount's documented None return for an unrecognized
+        coupon and formats it directly as currency, raising TypeError;
+        pricing/discount.py's contract explicitly makes None a valid
+        result callers must handle, so the defect is render_total's
+        missing guard, not compute_discount, which behaves exactly per
+        its documented contract.
+      defect_kind: unguarded-documented-optional-result
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case for #386's "Causal center" rule in its other direction:
+    when the claim is about unsafe handling of an otherwise-valid,
+    documented upstream state, the fix/action location stays downstream
+    and must not be mechanically moved upstream merely because the
+    upstream function is "where the value came from."
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

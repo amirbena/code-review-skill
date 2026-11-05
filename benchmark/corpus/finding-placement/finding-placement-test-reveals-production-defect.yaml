@@ -13,7 +13,7 @@
 # Expected: ONE required finding anchored in math/stats.py;
 # tests/test_stats.py never becomes an anchor.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-test-reveals-production-defect
 title: "A correct new test reveals median()'s even-length bug; the fix belongs in production, not the test"
@@ -67,6 +67,7 @@ expected:
       defect_kind: incorrect-even-length-median
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

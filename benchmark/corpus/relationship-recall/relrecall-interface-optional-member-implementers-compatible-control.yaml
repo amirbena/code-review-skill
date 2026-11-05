@@ -8,7 +8,7 @@
 # the implementer relationship changes nothing, so the correct conclusion
 # is no finding.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: relrecall-interface-optional-member-implementers-compatible-control
 title: "Cache interface gains an optional has() member; both implementers remain compatible"
@@ -54,6 +54,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

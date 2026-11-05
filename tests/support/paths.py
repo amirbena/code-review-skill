@@ -14,3 +14,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # Guard against an unexpected relocation of this helper.
 if not (REPO_ROOT / "AGENTS.md").is_file() or not (REPO_ROOT / "skills").is_dir():
     raise RuntimeError(f"unexpected repository layout: REPO_ROOT={REPO_ROOT}")
+
+# The frozen v2 corpus epoch: immutable inputs that historical experiments pin by digest.
+V2_EPOCH_CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus-v2"

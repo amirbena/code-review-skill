@@ -12,7 +12,7 @@
 # concurrently, contradicting the coordination assumption the rest of
 # the class depends on.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: distributed-systems-deepening-ownership-assumption-violated
 title: "force_run_job writes shared last_run state without the leader check every other writer relies on"
@@ -93,6 +93,8 @@ expected:
       defect_kind: missing-concurrency-test
 
 metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs the leader-only write assumption established elsewhere, then a bypassing path found."
   source: crafted
   tags: [concurrency]
   rationale: >-

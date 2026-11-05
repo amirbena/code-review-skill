@@ -1,0 +1,53 @@
+# Engineering-design-deepening corpus case (Issue #750, parent #747,
+# depends on #749). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Negative: a trade-off the document already acknowledges, with its
+# consequence stated accurately, is not a defect.
+
+format: benchmark-case/v2
+
+id: engineering-design-deepening-acknowledged-tradeoff-clean
+title: "A design accepts a stale read model, names the staleness window, and the window matches the stated requirement"
+
+input:
+  patch: |
+    diff --git a/docs/design/order-search.md b/docs/design/order-search.md
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/docs/design/order-search.md
+    @@ -0,0 +1,15 @@
+    +# Order search
+    +
+    +Status: Draft
+    +
+    +## Goal
+    +
+    +Support search over orders. Search results may lag writes by up to 30 seconds.
+    +
+    +## Approach
+    +
+    +A background indexer copies changed orders into the search index.
+    +
+    +## Trade-offs
+    +
+    +Search is eventually consistent. A newly created order can be missing from results for up to 30 seconds. We accept this to keep order writes independent of the index.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    Pins disconfirmation against the document itself: the eventual
+    consistency is acknowledged, its consequence is stated accurately, and it
+    does not violate an authoritative constraint.
+  taxonomy:
+    capability: [engineering-design]
+    policy_contract: [engineering-design-deepening]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

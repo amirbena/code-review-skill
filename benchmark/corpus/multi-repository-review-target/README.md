@@ -10,9 +10,9 @@ for `local-code-review`
 actually detects the cross-repository defects that motivated it, and that
 its membership-is-authorization boundary holds.
 
-## `input.repositories` — a `benchmark-case/v2` extension, not a new format
+## `input.repositories` — a `benchmark-case/v3` extension, not a new format
 
-Every case here is still a `benchmark-case/v2` fixture
+Every case here is still a `benchmark-case/v3` fixture
 ([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)),
 parsed and validated by the same single reference validator
 (`runtime_platform/benchmark/reference/benchmark_fixture.py`) every other corpus uses — this
@@ -55,7 +55,7 @@ or `../delegation-spawn/README.md` — whose
 outcomes are a structural allow/deny, not a diff and a set of findings —
 scenarios 1–3 below are genuine finding-quality claims ("the combined
 review correctly identifies this cross-repository defect"), exactly what
-`benchmark-case/v2` + `ProductionReviewerAdapter` already measure for a
+`benchmark-case/v3` + `ProductionReviewerAdapter` already measure for a
 single repository. Reusing that same mechanism, extended to N repository
 roots, keeps this sub-corpus inside the ordinary finding-precision/recall
 pipeline ([#41](https://github.com/amirbena/code-review-skill/issues/41))

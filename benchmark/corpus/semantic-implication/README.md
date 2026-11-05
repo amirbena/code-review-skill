@@ -5,7 +5,7 @@ Repository-development artifact for GitHub Issue
 signal-triggered pass in
 `shared/policies/review-scope.md`,
 "Semantic change-implication reasoning." This is a **focused sub-corpus**
-of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md) fixtures exercising that
+of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md) fixtures exercising that
 section's vocabulary: the eight canonical dimensions, their semantic
 (never structural) activation signals, the not-mutually-exclusive
 taxonomy, the no-signal non-analysis rule, and the bounded-expansion /

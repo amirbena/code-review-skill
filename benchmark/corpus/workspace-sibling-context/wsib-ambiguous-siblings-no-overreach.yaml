@@ -7,7 +7,7 @@
 # ambiguous: nothing is read, nothing is guessed, the question stays open. A
 # breakage finding drawn from either sibling is overreach.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: wsib-ambiguous-siblings-no-overreach
 title: "PaymentStatus gains refunded; two equally plausible consumers sit in the workspace"
@@ -94,6 +94,7 @@ expected:
       defect_kind: enum-member-added-context-dependent
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

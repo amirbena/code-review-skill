@@ -12,7 +12,7 @@
 # either patch — reveals that queue-consumer will silently overflow/drop
 # messages once queue-producer starts sending larger batches.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: repository-local-correct-combined-defect
 title: "queue-producer's batch-size increase silently overflows queue-consumer's untouched fixed-size buffer"
@@ -88,6 +88,7 @@ expected:
       defect_kind: cross-repository-capacity-mismatch
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, concurrency]
   rationale: >-

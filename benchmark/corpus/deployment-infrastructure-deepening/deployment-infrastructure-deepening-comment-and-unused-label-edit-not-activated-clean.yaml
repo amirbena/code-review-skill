@@ -5,7 +5,7 @@
 # Non-activation: a manifest file changes but no deployment-behavior
 # property does. File type and path are signals, never the trigger.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: deployment-infrastructure-deepening-comment-and-unused-label-edit-not-activated-clean
 title: "k8s/deployment.yaml changes only a comment and a label that no selector uses"
@@ -55,6 +55,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [no-op]
   rationale: >-

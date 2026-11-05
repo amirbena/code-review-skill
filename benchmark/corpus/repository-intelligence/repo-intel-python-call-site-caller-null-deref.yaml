@@ -16,7 +16,7 @@
 # supplied here via `input.base` since it is not itself changed by the
 # patch.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: repo-intel-python-call-site-caller-null-deref
 title: "Call-site trigger catches a caller-side null dereference after get_user() drops its exception contract"
@@ -82,6 +82,7 @@ expected:
       defect_kind: null-dereference
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

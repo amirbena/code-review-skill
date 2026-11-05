@@ -27,7 +27,7 @@
 # (outside the diff); signup/api.py's in-diff call line never becomes
 # the anchor merely because it is commentable.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-fallback-reuses-unresolved-location-state
 title: "The real defect is in an unchanged file outside the diff; the in-diff call site must not be used as a convenient stand-in anchor"
@@ -87,6 +87,7 @@ expected:
       defect_kind: regex-contract-violation
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

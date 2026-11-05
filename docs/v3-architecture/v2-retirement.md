@@ -78,34 +78,32 @@ invocation options.
 
 ## Benchmark corpora
 
-Deleted with their loaders (each held only a README, because its cases were
-Python fixtures): `delegation-spawn`, `github-enforcement-authorization`,
-`mutation-boundary`, `publication-mode`, `reasoning-checkpoint`,
-`security-events`, `trusted-host-nl-authorization`, `verdict-consistency`,
-`reviewer-brief`. Deleted with their cases: `policy-loading`, `dependency-tree-inspection`,
-`specialist-depth-progressive-loading-proof`, `scale-progressive-loading-proof`.
-`benchmark/corpus-index.json` is regenerated.
+[#848](https://github.com/amirbena/code-review-skill/issues/848) moved the
+active corpus to `benchmark-case/v3` and froze the original v2 corpus,
+byte-identical, in `benchmark/corpus-v2/` for the experiments that pin its
+bytes (including the concurrency campaign). The frozen archive is untouched.
 
-Kept for now, with no v2 loader: `workspace-sibling-context`,
-`external-contract-context`, `risk-depth`, `multi-repository-review-target`
-and `specialist-depth-composition`. The temporary concurrency campaign
-([`concurrency-experiment-spec.json`](../../runtime_platform/benchmark/schedule/concurrency-experiment-spec.json))
-pins eight of their cases by id, so deleting them would invalidate it. They are
-removed together with the campaign, whose own `removal_path` lists what goes,
-or at the cutover.
+This retirement removes from the **active** corpus the sub-corpora whose
+mechanism the ADR removes and whose loader or test is deleted:
+`delegation-spawn`, `github-enforcement-authorization`, `mutation-boundary`,
+`publication-mode`, `reasoning-checkpoint`, `security-events`,
+`trusted-host-nl-authorization`, `verdict-consistency`, `reviewer-brief`,
+`dependency-tree-inspection`, `specialist-depth-progressive-loading-proof`
+and `scale-progressive-loading-proof`. `benchmark/corpus-index.json` is
+regenerated. The workspace-sibling, external-contract, multi-repository and
+specialist-depth-composition sub-corpora stay in the active corpus with their
+v3 conversion and tests.
 
-[#848](https://github.com/amirbena/code-review-skill/issues/848) rebuilds the
-publication and trusted-host cases for v3 from the git history, using the
-mappings in [`review-publish-github.md`](review-publish-github.md) and
+The publication and trusted-host cases can be rebuilt for v3 from the frozen
+archive, using the mappings in [`review-publish-github.md`](review-publish-github.md) and
 [`review-runtime-check.md`](review-runtime-check.md). The deepening corpora and
-the remaining cases stay; some of their prose still names v2 paths and is
-refreshed by #848.
+the remaining cases stay; some of their prose still names v2 paths.
 
 ## Left for later children
 
 - **Benchmark adapter.** `benchmark_review_adapter.py` and `run_benchmark.py`
-  still invoke the v2 `local-code-review` name. #848 re-bases them on
-  `review-core`.
+  still invoke the v2 `local-code-review` name; they move to `review-core` or
+  the compatibility wrapper with #851.
 - **Packaging and release.** `package-manifest.json` declares no Skill, so the
   build produces an empty tree manifest. Registering the v3 Skills, the
   pre-release no-`version:` rule and the archive checks are #851. The release

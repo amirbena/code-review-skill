@@ -10,7 +10,7 @@
 # review-scope.md's "Semantic change-implication reasoning" section
 # defines.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: semantic-implication-single-dimension-persistence
 title: "Export writer renests amount_cents, silently breaking the untouched reconciliation reader"
@@ -71,6 +71,7 @@ expected:
       defect_kind: persisted-shape-compatibility-break
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, quality]
   rationale: >-

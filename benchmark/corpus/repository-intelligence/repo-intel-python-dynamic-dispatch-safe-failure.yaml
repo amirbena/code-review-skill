@@ -16,7 +16,7 @@
 # affected. `findings: []` pins that no finding is manufactured for
 # thoroughness.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: repo-intel-python-dynamic-dispatch-safe-failure
 title: "Dynamic string-keyed dispatch resolves as ambiguous, not an invented relationship"
@@ -61,6 +61,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

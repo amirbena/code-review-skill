@@ -21,6 +21,7 @@ from runtime_platform.benchmark.scripts import benchmark_termination as terminat
 from runtime_platform.benchmark.scripts import run_concurrency_experiment as exp
 from runtime_platform.benchmark.scripts.benchmark_corpus_membership import discover_comprehensive_fixtures
 from tests.support.evidence_destination import offline_destination
+from tests.support.paths import V2_EPOCH_CORPUS_DIR
 from runtime_platform.benchmark.scripts.benchmark_evidence_destination import StoreUnavailable
 from runtime_platform.benchmark.scripts.benchmark_evidence_destination import StoreUnavailable
 
@@ -47,15 +48,15 @@ def committed() -> dict:
 
 
 def fixtures_by_id() -> dict[str, dict]:
-    found = discover_comprehensive_fixtures(Path(exp.rb.DEFAULT_CORPUS_DIR))
+    found = discover_comprehensive_fixtures(V2_EPOCH_CORPUS_DIR)
     return {fx.case_id: yaml.safe_load(fx.fixture_path.read_text(encoding="utf-8")) for fx in found}
 
 
 class CommittedSubsetTest(unittest.TestCase):
     def test_identity_matches_the_corpus_and_is_deterministic(self):
         spec = committed()
-        first, manifest = exp.select_subset(spec, str(exp.rb.DEFAULT_CORPUS_DIR))
-        second, again = exp.select_subset(spec, str(exp.rb.DEFAULT_CORPUS_DIR))
+        first, manifest = exp.select_subset(spec, str(V2_EPOCH_CORPUS_DIR))
+        second, again = exp.select_subset(spec, str(V2_EPOCH_CORPUS_DIR))
         self.assertEqual(manifest, again)
         self.assertEqual(manifest["subset_id"], spec["subset"]["subset_id"])
         self.assertEqual([f.case_id for f in first], spec["subset"]["case_ids"])
@@ -65,7 +66,7 @@ class CommittedSubsetTest(unittest.TestCase):
         spec = committed()
         spec["subset"]["subset_id"] = "0" * 64
         with self.assertRaisesRegex(exp.RoutineExecutionError, "subset_id"):
-            exp.select_subset(spec, str(exp.rb.DEFAULT_CORPUS_DIR))
+            exp.select_subset(spec, str(V2_EPOCH_CORPUS_DIR))
 
     def test_strata_partition_the_case_ids(self):
         subset = committed()["subset"]
@@ -186,7 +187,7 @@ class WorkerValidationTest(unittest.TestCase):
 
 
 def run_scheduled(date: str, *, head: str, pinned: str | None, clean: bool = True, refs=()):
-    argv = ["--cli", "fake", "--trigger", "scheduled", "--runtime-version", "v1"] + (["--pinned-sha", pinned] if pinned else [])
+    argv = ["--cli", "fake", "--trigger", "scheduled", "--runtime-version", "v1", "--corpus-dir", str(V2_EPOCH_CORPUS_DIR)] + (["--pinned-sha", pinned] if pinned else [])
     with mock.patch.object(exp, "prior_experiment_refs", return_value=list(refs)), mock.patch.object(exp, "local_today", return_value=date), mock.patch.object(
         exp, "utc_now", return_value=f"{date}T09:00:00Z"
     ), mock.patch.object(exp, "git_sha", return_value=head), mock.patch.object(exp, "checkout_is_clean", return_value=clean), mock.patch.object(

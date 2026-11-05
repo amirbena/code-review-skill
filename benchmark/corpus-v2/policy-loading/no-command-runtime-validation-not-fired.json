@@ -1,0 +1,70 @@
+{
+  "id": "no-command-runtime-validation-not-fired",
+  "skill": "local-code-review",
+  "skill_version": "1.80.6",
+  "description": "Synthetic review of a repository with no declared command: no predicate fires, runtime-validation.md is never opened, and the explicit no-command Validation entry still renders.",
+  "repository_commands": [],
+  "fired_conditional": [],
+  "validation_entry": "No repository command declared; none run.",
+  "tool_calls": [
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/review-scope.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/change-risk-signals.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/review-stopping-criteria.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/severity.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/evidence.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/repository-instructions.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/review-base-policy.md"
+      }
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cd $SKILL_DIR && for f in shared/policies/git-safety.md shared/policies/verdict-consistency.md shared/policies/file-reviewability.md shared/policies/remediation-guidance.md shared/templates/finding.md shared/templates/finding-rendering.md shared/templates/review-summary.md policies/invocation-approval.md policies/repository-state.md; do echo \"=== $f\"; cat $f; done"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/repository-expansion.md"
+      }
+    }
+  ],
+  "rendered": {
+    "result_label": "✅ Review Clean",
+    "decision_label": "REVIEW CLEAN",
+    "coverage": "complete"
+  }
+}

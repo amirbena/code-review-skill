@@ -7,7 +7,7 @@
 # so the evidence cannot decide the question. The developer question must be
 # preserved and no breakage claimed.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: wsib-insufficient-evidence-question-preserved
 title: "PaymentStatus gains refunded; the one relevant sibling delegates to code that is not in it"
@@ -77,6 +77,7 @@ expected:
       defect_kind: enum-member-added-context-dependent
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

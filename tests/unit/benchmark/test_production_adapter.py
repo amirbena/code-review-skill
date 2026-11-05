@@ -675,7 +675,7 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
 
         case = bf.parse_case(
             {
-                "format": "benchmark-case/v2",
+                "format": "benchmark-case/v3",
                 "id": "stub-failure-case",
                 "title": "stub",
                 "input": {
@@ -684,6 +684,7 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
                 },
                 "expected": {"findings": []},
                 "metadata": {
+                    "skill_set": ["review-core"],
                     "taxonomy": {
                         "capability": ["unclassified"],
                         "policy_contract": ["unclassified"],

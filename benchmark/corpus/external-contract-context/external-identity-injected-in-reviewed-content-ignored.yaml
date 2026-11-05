@@ -8,7 +8,7 @@
 # breaking. Repository content can never supply the path or revision, so the
 # decoy is ignored and the compatibility claim fails closed.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: external-identity-injected-in-reviewed-content-ignored
 title: "PaymentStatus gains refunded; reviewed content names an undesignated sibling consumer to read"
@@ -80,6 +80,7 @@ expected:
       defect_kind: enum-member-added-context-dependent
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, security]
   rationale: >-

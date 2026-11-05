@@ -6,7 +6,7 @@
 # changes (no manifest touched), yet the Deployment's probes and Service
 # still target the old port. Startup/runtime-contract property.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: deployment-infrastructure-deepening-probe-port-no-longer-matches-listener
 title: "config/app.yaml moves the listen port 8080 -> 9090 while the Deployment probes and Service still target 8080"
@@ -89,6 +89,7 @@ expected:
       defect_kind: probe-and-route-port-no-longer-matches-listener
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

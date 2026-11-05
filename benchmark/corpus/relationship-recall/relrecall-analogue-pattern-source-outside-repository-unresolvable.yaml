@@ -10,7 +10,7 @@
 # placement pattern can be inferred. The inline table is complete and
 # correct, so the correct output is no finding.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: relrecall-analogue-pattern-source-outside-repository-unresolvable
 title: "New connector defines status labels inline; the layout it should follow lives in another repository"
@@ -48,6 +48,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

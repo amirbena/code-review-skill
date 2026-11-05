@@ -4,7 +4,7 @@ Repository-development artifact for GitHub Issue
 [#602](https://github.com/amirbena/code-review-skill/issues/602) (R2 of
 epic [#600](https://github.com/amirbena/code-review-skill/issues/600)). A
 focused sub-corpus of
-[`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
+[`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures, plus a class map and a recorded baseline, that measure whether the
 **current search-only reviewer** reaches the correct review conclusion when
 that conclusion depends on a relationship outside the diff.

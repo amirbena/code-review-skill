@@ -11,7 +11,7 @@
 # parameter, so there is no reasonable reading under which it does not
 # block.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: dd-blocking-p0-sql-injection
 title: "fetch_orders interpolates an untrusted customer_id into its SQL string"
@@ -68,6 +68,7 @@ expected:
       defect_kind: missing-test
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [security]
   rationale: >-

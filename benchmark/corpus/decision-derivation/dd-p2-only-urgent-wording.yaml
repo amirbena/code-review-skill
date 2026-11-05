@@ -14,7 +14,7 @@
 # decision; only a required P0/P1 finding does that (severity.md,
 # "Decision derivation (mechanical)").
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: dd-p2-only-urgent-wording
 title: "render_summary logs via print() instead of the module logger, described in urgent/blocking language"
@@ -61,6 +61,7 @@ expected:
       defect_kind: print-instead-of-logger
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

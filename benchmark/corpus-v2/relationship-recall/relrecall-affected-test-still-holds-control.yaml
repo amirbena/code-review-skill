@@ -1,0 +1,87 @@
+# Relationship-recall corpus case (Issue #602, parent #600). Format:
+# runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Affected-test class, CONTROL. shipping_cost_cents() gains an opt-in
+# `express` argument whose default leaves every existing result unchanged.
+# The same unlinked-name test (tests/test_order_summary.py) is reachable
+# through build_summary and resolves, but it still holds. Resolving the
+# relationship changes nothing, so the correct conclusion is no finding.
+# The new express branch has no test; that gap is an optional note, not a
+# required finding, as in the rest of the corpus.
+
+format: benchmark-case/v2
+
+id: relrecall-affected-test-still-holds-control
+title: "Shipping cost gains an opt-in express argument; the unlinked order-summary test still holds"
+
+input:
+  patch: |
+    diff --git a/app/shipping/rates.py b/app/shipping/rates.py
+    index 1111111..2222222 100644
+    --- a/app/shipping/rates.py
+    +++ b/app/shipping/rates.py
+    @@ -1,4 +1,6 @@
+    -def shipping_cost_cents(subtotal_cents):
+    +def shipping_cost_cents(subtotal_cents, express=False):
+    +    if express:
+    +        return 1299
+         if subtotal_cents >= 5000:
+             return 0
+         return 599
+  base:
+    app/shipping/rates.py: |
+      def shipping_cost_cents(subtotal_cents):
+          if subtotal_cents >= 5000:
+              return 0
+          return 599
+    app/orders/summary.py: |
+      from app.shipping.rates import shipping_cost_cents
+
+
+      def build_summary(subtotal_cents):
+          shipping = shipping_cost_cents(subtotal_cents)
+          return {
+              "subtotal": subtotal_cents,
+              "shipping": shipping,
+              "total": subtotal_cents + shipping,
+          }
+    tests/test_order_summary.py: |
+      from app.orders.summary import build_summary
+
+
+      def test_free_shipping_at_fifty_dollars():
+          summary = build_summary(5000)
+          assert summary["shipping"] == 0
+          assert summary["total"] == 5000
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: express-shipping-branch-has-no-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: symbol
+        path: app/shipping/rates.py
+        symbol: shipping_cost_cents
+        anchor: "return 1299"
+      claim: >-
+        The new express branch of shipping_cost_cents returns 1299 and no
+        existing test exercises it.
+      defect_kind: missing-test
+
+metadata:
+  source: crafted
+  tags: [regression]
+  rationale: >-
+    Control for the affected-test class: the dependent test is found by
+    following the consumer, is re-validated against the new behavior, and
+    still holds because the default path is unchanged. A finding on the
+    existing test would be a false positive from over-reading the
+    relationship.
+  taxonomy:
+    capability: [relationship-recall]
+    policy_contract: [affected-test-analysis]
+    risk_mode: [regression]
+    affected_surface: [unclassified]

@@ -6,9 +6,9 @@ the bounded external contract context
 `local-code-review` reads under
 `skills/local-code-review/policies/external-contract-context.md`.
 
-## `input.external_contexts` — an additive `benchmark-case/v2` input
+## `input.external_contexts` — an additive `benchmark-case/v3` input
 
-Every case is still a `benchmark-case/v2` fixture parsed by the one reference
+Every case is still a `benchmark-case/v3` fixture parsed by the one reference
 validator
 ([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md),
 §6.5). The one new optional input, valid alongside `patch` or `repositories`,

@@ -16,7 +16,7 @@
 # Expected: ONE required finding anchored in pricing/discount.py;
 # billing/invoice.py never becomes an anchor.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-causal-site-not-symptom
 title: "Coupon percentage is never clamped; the negative discount is invoice.py's evidence, not its defect"
@@ -71,6 +71,7 @@ expected:
       defect_kind: missing-value-clamp
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

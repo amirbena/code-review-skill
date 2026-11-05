@@ -9,11 +9,11 @@ execution side (`run_benchmark_routine.py`) and the storage side
 
 1. The **lane** identity — `sentinel` (the 4 permanent canonical cases,
    `benchmark/corpus/*.yaml`, every 3 days) vs. `comprehensive`
-   (every `benchmark-case/v2` fixture in the corpus tree, weekly) — and
+   (every `benchmark-case/v3` fixture in the corpus tree, weekly) — and
    `full`'s resolution as a deprecated, fixed synonym for `sentinel`
    (never a second live meaning).
 2. **Comprehensive corpus membership**, derived programmatically by
-   recursively scanning the corpus tree for `benchmark-case/v2` fixtures
+   recursively scanning the corpus tree for `benchmark-case/v3` fixtures
    (`runtime_platform/benchmark/fixture-format.md`) rather than a hard-coded count or
    list. A sub-corpus directory that holds zero such fixtures — a
    test-only / reference-model suite consumed only by
@@ -37,7 +37,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-FORMAT_V2 = "benchmark-case/v2"
+FORMAT_V3 = "benchmark-case/v3"
+# The frozen v2 epoch (benchmark/corpus-v2/) is reachable only by pointing
+# `--corpus-dir` at it, which is how a historical experiment re-verifies the
+# bytes it pinned. Nothing under the active `benchmark/corpus/` may carry it
+# (pinned by tests/unit/benchmark/test_benchmark_v2_epoch.py).
+FORMAT_V2_FROZEN = "benchmark-case/v2"
+ACCEPTED_FORMATS = (FORMAT_V3, FORMAT_V2_FROZEN)
 
 SENTINEL_LANE = "sentinel"
 COMPREHENSIVE_LANE = "comprehensive"
@@ -66,7 +72,7 @@ def canonical_lane(mode: str) -> str:
 
 @dataclass(frozen=True)
 class ComprehensiveFixture:
-    """One `benchmark-case/v2` fixture eligible for the comprehensive lane.
+    """One `benchmark-case/v3` fixture eligible for the comprehensive lane.
 
     `corpus_dir` is the directory `run_benchmark.py --corpus-dir` must be
     pointed at to find this fixture by `--case-id` — `run_benchmark.py`'s
@@ -84,7 +90,7 @@ def discover_comprehensive_fixtures(corpus_root: Path) -> list[ComprehensiveFixt
     """Recursively derive comprehensive lane membership from the corpus tree.
 
     Every `*.yaml` file anywhere under `corpus_root` whose top-level
-    `format` is exactly `benchmark-case/v2` is included, keyed by its own
+    `format` is exactly `benchmark-case/v3` is included, keyed by its own
     `id`. This is the only membership rule — no case count, path, or name
     is hard-coded. A file that fails to parse as YAML, is not a mapping,
     or lacks a non-empty string `id` is skipped rather than raising, since
@@ -102,7 +108,7 @@ def discover_comprehensive_fixtures(corpus_root: Path) -> list[ComprehensiveFixt
             data = yaml.safe_load(path.read_text(encoding="utf-8"))
         except yaml.YAMLError:
             continue
-        if not isinstance(data, dict) or data.get("format") != FORMAT_V2:
+        if not isinstance(data, dict) or data.get("format") not in ACCEPTED_FORMATS:
             continue
         case_id = data.get("id")
         if not isinstance(case_id, str) or not case_id.strip():

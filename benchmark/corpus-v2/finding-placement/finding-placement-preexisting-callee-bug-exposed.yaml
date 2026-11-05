@@ -1,0 +1,79 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# inventory/adjust.py's apply_adjustment (base, unchanged) already
+# rejects an exact-zero remaining as insufficient stock (`remaining <=
+# 0` should be `remaining < 0`) -- a pre-existing off-by-one that
+# predates this diff and was simply never reached by an existing caller.
+# The new orders/cancel.py is the first caller to pass delta == qty,
+# reaching remaining == 0 and exposing the bug. The fix/action location
+# stays at the pre-existing callee bug; the new caller is the trigger
+# that surfaced the evidence, not the cause.
+#
+# Expected: ONE required finding anchored in inventory/adjust.py, which
+# the diff never touches; orders/cancel.py never becomes an anchor.
+
+format: benchmark-case/v2
+
+id: finding-placement-preexisting-callee-bug-exposed
+title: "A new caller reaches apply_adjustment's pre-existing off-by-one; the bug is the callee's, not the new caller's"
+
+input:
+  patch: |
+    diff --git a/orders/cancel.py b/orders/cancel.py
+    new file mode 100644
+    index 0000000..5e6f7a8
+    --- /dev/null
+    +++ b/orders/cancel.py
+    @@ -0,0 +1,5 @@
+    +from inventory.adjust import apply_adjustment
+    +
+    +
+    +def cancel_order(order: dict) -> int:
+    +    return apply_adjustment(order["qty"], order["qty"])
+  base:
+    inventory/adjust.py: |
+      def apply_adjustment(qty: int, delta: int) -> int:
+          remaining = qty - delta
+          if remaining <= 0:
+              raise ValueError("insufficient stock")
+          return remaining
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: apply-adjustment-rejects-exact-zero-remaining
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: inventory/adjust.py
+        symbol: apply_adjustment
+        anchor: "if remaining <= 0:"
+      claim: >-
+        inventory/adjust.py's apply_adjustment rejects a remaining stock
+        of exactly zero as insufficient stock (`remaining <= 0` should
+        be `remaining < 0`), a pre-existing off-by-one that predates
+        this diff. orders/cancel.py's new cancel_order is the first
+        caller to pass delta == qty, reaching remaining == 0 and
+        exposing the bug -- it is the trigger, not the cause, and is
+        otherwise a correct, minimal caller.
+      defect_kind: off-by-one-boundary-condition
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case for #386's third caller/callee sub-case: a
+    pre-existing callee bug merely exposed by a changed caller. The
+    fix/action location must stay at the callee even though the callee
+    itself is entirely outside this diff, and the new caller -- which
+    only surfaces the evidence -- must not be misattributed as the
+    defect.
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [architectural-placement]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

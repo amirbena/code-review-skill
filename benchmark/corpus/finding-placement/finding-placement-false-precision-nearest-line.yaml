@@ -15,7 +15,7 @@
 # Expected: ONE required finding at the function/mechanism level (no
 # single misleadingly precise line), not pinned to the newly added elif.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-false-precision-nearest-line
 title: "transition() is missing a SHIPPED branch; the finding must not be pinned to the newly added PAID elif"
@@ -85,6 +85,7 @@ expected:
       defect_kind: missing-state-transition-branch
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

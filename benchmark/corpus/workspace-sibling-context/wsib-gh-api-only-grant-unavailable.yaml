@@ -7,7 +7,7 @@
 # is unavailable and behaviour is unchanged: the outcome equals a review with
 # no grant, so no sibling-derived finding appears.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: wsib-gh-api-only-grant-unavailable
 title: "PaymentStatus gains refunded; API-only mode cannot read the granted workspace"
@@ -87,6 +87,7 @@ expected:
       defect_kind: enum-member-added-context-dependent
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

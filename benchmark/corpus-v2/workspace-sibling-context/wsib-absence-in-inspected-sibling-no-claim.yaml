@@ -1,0 +1,65 @@
+# Workspace sibling context corpus case (Issue #664). Format:
+# ../../../runtime_platform/benchmark/fixture-format.md `input.workspace_siblings`.
+# See ./README.md for the cluster.
+#
+# payment-service adds payment.refunded.v1 to its event catalog. The one
+# nominated sibling, ledger-consumer, subscribes only to payment.completed.v1,
+# so the bounded read finds no subscriber. That states what was searched,
+# where, and at which revision; it is never evidence that nothing consumes the
+# event, and no finding follows.
+
+format: benchmark-case/v2
+
+id: wsib-absence-in-inspected-sibling-no-claim
+title: "payment-service catalogs a new refunded event; the inspected sibling never subscribes to it"
+
+input:
+  patch: |
+    diff --git a/events/catalog.json b/events/catalog.json
+    --- a/events/catalog.json
+    +++ b/events/catalog.json
+    @@ -1,4 +1,5 @@
+     {
+       "payment.completed.v1": {"schema": "schemas/payment_completed.schema.json"},
+    -  "payment.failed.v1": {"schema": "schemas/payment_failed.schema.json"}
+    +  "payment.failed.v1": {"schema": "schemas/payment_failed.schema.json"},
+    +  "payment.refunded.v1": {"schema": "schemas/payment_refunded.schema.json"}
+     }
+  base:
+    events/catalog.json: |
+      {
+        "payment.completed.v1": {"schema": "schemas/payment_completed.schema.json"},
+        "payment.failed.v1": {"schema": "schemas/payment_failed.schema.json"}
+      }
+    docs/consumers.md: |
+      # Consumers
+
+      - ledger-consumer: subscribes to payment events.
+  workspace_siblings:
+    ledger-consumer:
+      files:
+        ledger/subscriptions.yaml: |
+          subscribe:
+            - payment.completed.v1
+  context: >-
+    The caller grants a workspace root once. Sibling repositories under it
+    are read-only evidence for an unresolved question, never part of the
+    Review Target.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Issue #664 class 5: absence in an inspected sibling. Sibling evidence
+    never yields an absence claim; the measured output must not state that
+    nothing consumes the event.
+  taxonomy:
+    capability: [workspace-sibling-context]
+    policy_contract: [workspace-sibling-context]
+    risk_mode: [correctness]
+    affected_surface: [benchmark-corpus-or-tooling]

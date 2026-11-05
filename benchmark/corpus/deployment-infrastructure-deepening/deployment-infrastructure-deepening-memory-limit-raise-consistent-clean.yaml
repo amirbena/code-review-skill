@@ -6,7 +6,7 @@
 # capability is activated, but the related runtime setting stays consistent
 # and the change is a loosening. Nothing to report.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: deployment-infrastructure-deepening-memory-limit-raise-consistent-clean
 title: "k8s/deployment.yaml raises the container memory limit 512Mi -> 1Gi while the JVM heap stays well under both"
@@ -59,6 +59,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-
