@@ -61,7 +61,8 @@ class ShapeTests(unittest.TestCase):
                 match = FRONTMATTER_RE.match(read(name, "SKILL.md"))
                 self.assertIsNotNone(match)
                 fields = dict(line.split(": ", 1) for line in match.group(1).splitlines())
-                self.assertEqual(set(fields), {"name", "description"})
+                self.assertEqual(set(fields), {"name", "description", "version"})
+                self.assertRegex(fields["version"], r"^\d+\.\d+\.\d+$")
                 self.assertEqual(fields["name"], name)
                 self.assertLessEqual(len(fields["description"]), 200)
 
