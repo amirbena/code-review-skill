@@ -102,6 +102,7 @@ REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
         "tests/unit/review/core/test_depth_skills_contract.py",
         "tests/unit/review/core/test_review_publish_github_contract.py",
         "tests/unit/review/core/test_domain_mini_skills_contract.py",
+        "tests/unit/review/core/test_review_runtime_check_contract.py",
         "runtime_platform/benchmark/reference/benchmark_runner.py",
         "runtime_platform/benchmark/scripts/build_benchmark_index.py",
         "runtime_platform/benchmark/scripts/benchmark_run_evidence.py",

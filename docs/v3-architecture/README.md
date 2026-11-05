@@ -17,6 +17,7 @@ v2 behavior. v2.x stays the published line until the cutover (#851).
 | [`packaged-file-disposition.md`](packaged-file-disposition.md) | The disposition of **every** current packaged file (`skills/*/**`, `shared/**`): Core, a named mini-skill, or removed, with a one-line reason. | [#842](https://github.com/amirbena/code-review-skill/issues/842) |
 | [`review-publish-github.md`](review-publish-github.md) | Where the v2 publication rules, benchmark corpora and `scripts/github_integration/` code went for the publication mini-skill. | [#844](https://github.com/amirbena/code-review-skill/issues/844) |
 | [`domain-mini-skills-benchmark-remap.md`](domain-mini-skills-benchmark-remap.md) | How the v2 deepening benchmark cases map to `review-security` and `review-backend`: core-floor, uplift or clean-guard. | [#846](https://github.com/amirbena/code-review-skill/issues/846) |
+| [`review-runtime-check.md`](review-runtime-check.md) | Where the v2 runtime-validation and trusted-host rules went for the execution mini-skill, and the fate of the sandbox benchmark cases. | [#847](https://github.com/amirbena/code-review-skill/issues/847) |
 
 ## Epic and delivery
 
