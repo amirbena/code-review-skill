@@ -1,0 +1,76 @@
+# Benchmark corpus case (Issue #876): review-core Reuse rule.
+# Format: runtime_platform/benchmark/fixture-format.md.
+
+format: benchmark-case/v3
+
+id: duplication-reuse-backend-divergent-validator-p1
+title: "New signup validator re-implements is_valid_email with a looser rule"
+
+input:
+  patch: |
+    diff --git a/app/signup.py b/app/signup.py
+    index 1111111..2222222 100644
+    --- a/app/signup.py
+    +++ b/app/signup.py
+    @@ -1,2 +1,11 @@
+    +import re
+    +
+    +
+    +def _email_ok(value):
+    +    return re.match(r"[^@\s]+@[^@\s]+", value or "") is not None
+    +
+    +
+     def signup(email, password):
+    -    _create_user(email, password)
+    +    if not _email_ok(email):
+    +        raise ValueError("invalid email")
+    +    _create_user(email, password)
+  base:
+    app/signup.py: |
+      def signup(email, password):
+          _create_user(email, password)
+    app/validators.py: |
+      import re
+
+      _EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+
+
+      def is_valid_email(value):
+          return re.fullmatch(_EMAIL_RE, value or "") is not None
+    app/accounts.py: |
+      from .validators import is_valid_email
+
+
+      def change_email(user, email):
+          if not is_valid_email(email):
+              raise ValueError("invalid email")
+          user.email = email
+          user.save()
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: reimplemented-email-validator
+      match: required
+      severity: P1
+      location:
+        location_intent: symbol
+        path: app/signup.py
+        symbol: _email_ok
+        anchor: "def _email_ok(value):"
+      claim: >-
+        signup adds _email_ok, a second email validator, although app.validators.is_valid_email already exists and change_email uses it. The copy uses re.match with no domain dot, so it accepts values such as a@b or an address with a trailing payload that is_valid_email rejects, on the live signup path.
+      defect_kind: duplicated-validator-divergent-rule
+
+metadata:
+  skill_set: [review-core]
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    A reimplemented validator that already accepts input the canonical one rejects meets the credible-defect bar, so the reuse finding is P1.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

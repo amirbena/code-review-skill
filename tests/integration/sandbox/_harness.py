@@ -21,10 +21,12 @@ from scripts.sandbox.runner import SandboxRunner
 PRIMITIVES: tuple[capability.Primitive, ...] = capability.available_primitives()
 
 # Command-launcher per primitive: Seatbelt runs the host's own interpreter,
-# the Docker image supplies its own `python3` on PATH inside the container.
+# Docker and bwrap resolve `python3` on the sandbox's own PATH (the image's,
+# or the read-only /usr bind).
 _PY_FOR_PRIMITIVE = {
     capability.Primitive.MACOS_SEATBELT: sys.executable,
     capability.Primitive.DOCKER: "python3",
+    capability.Primitive.LINUX_BWRAP: "python3",
 }
 
 
