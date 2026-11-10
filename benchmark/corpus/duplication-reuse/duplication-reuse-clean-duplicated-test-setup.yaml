@@ -1,0 +1,58 @@
+# Benchmark corpus case (Issue #876): review-core Reuse rule.
+# Format: runtime_platform/benchmark/fixture-format.md.
+
+format: benchmark-case/v3
+
+id: duplication-reuse-clean-duplicated-test-setup
+title: "Repeated test setup kept inline for readability"
+
+input:
+  patch: |
+    diff --git a/tests/test_cart.py b/tests/test_cart.py
+    index 1111111..2222222 100644
+    --- a/tests/test_cart.py
+    +++ b/tests/test_cart.py
+    @@ -4,3 +4,10 @@ def test_add_item():
+         cart = Cart(user="u1", currency="USD")
+         cart.add("sku1", 2)
+         assert cart.total() == 20
+    +
+    +
+    +def test_remove_item():
+    +    cart = Cart(user="u1", currency="USD")
+    +    cart.add("sku1", 2)
+    +    cart.remove("sku1")
+    +    assert cart.total() == 0
+  base:
+    tests/test_cart.py: |
+      def test_add_item():
+          cart = Cart(user="u1", currency="USD")
+          cart.add("sku1", 2)
+          assert cart.total() == 20
+    app/cart.py: |
+      class Cart:
+          def __init__(self, user, currency):
+              self.items = {}
+          def add(self, sku, qty):
+              self.items[sku] = qty
+          def remove(self, sku):
+              self.items.pop(sku, None)
+          def total(self):
+              return sum(q * 10 for q in self.items.values())
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core]
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Duplicated test setup where abstraction would hurt readability.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

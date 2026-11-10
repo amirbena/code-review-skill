@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v3.1.0 — 2026-11-10
+
+### Changed
+
+- Review Core now checks every change for unjustified duplication or reimplementation of existing logic, reporting it only when equivalent and evidenced (#877).
+
 ## v3.0.0 — 2026-11-05
 
 ### Breaking

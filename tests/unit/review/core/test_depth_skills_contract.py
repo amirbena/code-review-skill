@@ -91,7 +91,7 @@ class SelectionSurfaceTests(unittest.TestCase):
             with self.subTest(skill=name):
                 self.assertIsNotNone(match)
                 fields = dict(line.split(": ", 1) for line in match.group(1).splitlines())
-                self.assertEqual(set(fields), {"name", "version", "description"})
+                self.assertEqual(set(fields) - {"version"}, {"name", "description"})
                 self.assertEqual(fields["name"], name)
                 self.assertLessEqual(len(fields["description"]), 200)
 

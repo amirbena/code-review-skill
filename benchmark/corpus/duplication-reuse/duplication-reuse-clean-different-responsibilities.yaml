@@ -1,0 +1,42 @@
+# Benchmark corpus case (Issue #876): review-core Reuse rule.
+# Format: runtime_platform/benchmark/fixture-format.md.
+
+format: benchmark-case/v3
+
+id: duplication-reuse-clean-different-responsibilities
+title: "Similar-looking functions with different responsibilities"
+
+input:
+  patch: |
+    diff --git a/app/pricing.py b/app/pricing.py
+    index 1111111..2222222 100644
+    --- a/app/pricing.py
+    +++ b/app/pricing.py
+    @@ -1,2 +1,6 @@
+     def apply_discount(price, pct):
+         return price - price * pct / 100
+    +
+    +
+    +def apply_tax(price, pct):
+    +    return price + price * pct / 100
+  base:
+    app/pricing.py: |
+      def apply_discount(price, pct):
+          return price - price * pct / 100
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core]
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Same shape, opposite meaning; not duplication.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

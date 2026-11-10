@@ -1,0 +1,45 @@
+# Benchmark corpus case (Issue #876): review-core Reuse rule.
+# Format: runtime_platform/benchmark/fixture-format.md.
+
+format: benchmark-case/v3
+
+id: duplication-reuse-clean-two-line-repeat
+title: "A two-line repeat is not worth a finding"
+
+input:
+  patch: |
+    diff --git a/app/audit.py b/app/audit.py
+    index 1111111..2222222 100644
+    --- a/app/audit.py
+    +++ b/app/audit.py
+    @@ -1,3 +1,8 @@
+     def log_login(user):
+         logger.info("login %s", user.id)
+         metrics.incr("login")
+    +
+    +
+    +def log_logout(user):
+    +    logger.info("logout %s", user.id)
+    +    metrics.incr("logout")
+  base:
+    app/audit.py: |
+      def log_login(user):
+          logger.info("login %s", user.id)
+          metrics.incr("login")
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core]
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Small repetition with no consequence.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

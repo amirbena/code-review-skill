@@ -77,7 +77,7 @@ never by a maintained denylist.
 |---|---|---|---|---|
 | [`correctness-off-by-one-pagination.yaml`](correctness-off-by-one-pagination.yaml) | correctness | refactor of a pagination helper adds `+ 1` to the slice end | report one **P1** off-by-one: every page returns one row that also appears on the next page (an `optional` missing-regression-test note is also acceptable) | `changes-required` |
 | [`security-command-injection.yaml`](security-command-injection.yaml) | security | argument-vector `subprocess` call becomes a `shell=True` string built from an untrusted `name` | report one **P0** command injection (acceptably on the `subprocess.run` call **or** the f-string that feeds it; an `optional` missing-security-test note is also acceptable) | `changes-required` |
-| [`quality-duplicated-branch-logic.yaml`](quality-duplicated-branch-logic.yaml) | quality | a new `sms` dispatch branch copy-pastes `format_message(user)` from the `email` branch | report one **P2** duplication and still return `clean` — the change is correct and safe | `clean` |
+| [`quality-duplicated-branch-logic.yaml`](quality-duplicated-branch-logic.yaml) | quality | a new `sms` dispatch branch copy-pastes `format_message(user)` from the `email` branch | report one **P2** duplication (kept `required` by the Issue #876 decision) and still return `clean` — the change is correct and safe | `clean` |
 | [`no-op-comment-and-rename.yaml`](no-op-comment-and-rename.yaml) | no-op | a docstring is added and a local variable renamed; behaviour is identical (the pre-image already uses `math.pi`, so the touched line has nothing flag-worthy) | report **nothing** (`findings: []`, `findings_completeness: exhaustive`) | `clean` |
 
 Per-case provenance and a one-paragraph rationale also live in each
