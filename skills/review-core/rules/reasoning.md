@@ -39,6 +39,38 @@ or config wiring and calls from other languages. When one of those may
 reach a changed contract and you could not check it, list it as not
 investigated.
 
+## Reuse
+
+Every review checks whether the change re-implements logic the
+repository already provides or copies logic maintained elsewhere, in any
+domain: code, UI, queries, policies, Helm, Terraform or workflow steps.
+It is part of the standing review, and most reviews report nothing.
+
+When the change adds a non-trivial function, validation, transformation,
+query, component logic, policy or config block, run one `git grep` for an
+existing equivalent and stop after about ten hits. A change that adds
+none of these needs no search.
+
+Report only when all of these hold:
+
+- the implementations have the same responsibility, not just a similar
+  shape;
+- a shared implementation already exists or is clearly appropriate;
+- the change introduces the duplication or materially worsens it;
+- code you read shows a concrete consequence: the copies already
+  disagree, a fix or rule exists in one copy only, a canonical validator
+  or policy is bypassed, or they diverge on a path that matters.
+
+Do not report different responsibilities, intentional isolation between
+components or services (including a documented decision or a repository
+with no shared package), small repetition, test setup where abstraction
+hurts readability, an extraction that adds more complexity than it
+removes, or speculative future divergence.
+
+Default to P2. Use P1 only when the copies already produce a wrong result
+under the credible-defect bar below, such as accepting input the canonical
+copy rejects.
+
 ## Implication checklist
 
 For each behavior change, ask:
@@ -53,6 +85,8 @@ For each behavior change, ask:
   input handling, secrets or trust boundaries?
 - **Failure paths:** what happens on errors, timeouts, empty or missing
   values, retries and concurrent use?
+- **Reuse:** does the change re-implement logic the repository already
+  provides, or copy logic maintained elsewhere?
 - **Tests:** is the changed behavior tested, and do existing tests still
   describe the new behavior?
 

@@ -4,7 +4,10 @@
 # call from the existing branch instead of computing it once before the
 # dispatch. The change is correct and safe; the only finding is a P2
 # maintainability issue, so the mechanical decision stays `clean`. Anchors
-# the "quality-only, non-blocking" slice of the corpus.
+# the "quality-only, non-blocking" slice of the corpus. The finding is
+# `optional` (Issue #876): a one-line in-function repeat is the trivial
+# repetition review-core's Reuse rule says not to require, so reporting it
+# is not a false positive and omitting it is not a miss.
 
 format: benchmark-case/v3
 
@@ -41,7 +44,7 @@ expected:
   findings_completeness: exhaustive
   findings:
     - key: duplicated-format-message-call
-      match: required
+      match: optional
       severity: P2
       location:
         location_intent: symbol

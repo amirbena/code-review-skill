@@ -1,0 +1,73 @@
+# Benchmark corpus case (Issue #876): review-core Reuse rule.
+# Format: runtime_platform/benchmark/fixture-format.md.
+
+format: benchmark-case/v3
+
+id: duplication-reuse-infra-copied-helm-block-p2
+title: "New chart pastes the probe block instead of the shared Helm helper"
+
+input:
+  patch: |
+    diff --git a/charts/billing/templates/deployment.yaml b/charts/billing/templates/deployment.yaml
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/charts/billing/templates/deployment.yaml
+    @@ -0,0 +1,10 @@
+    +          readinessProbe:
+    +            httpGet:
+    +              path: /healthz
+    +              port: 8080
+    +            periodSeconds: 10
+    +          livenessProbe:
+    +            httpGet:
+    +              path: /healthz
+    +              port: 8080
+    +            periodSeconds: 10
+  base:
+    charts/_common/templates/_probes.tpl: |
+      {{- define "common.probes" -}}
+      readinessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+        periodSeconds: 5
+        failureThreshold: 3
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+        periodSeconds: 10
+        failureThreshold: 3
+      {{- end -}}
+    charts/orders/templates/deployment.yaml: |
+                {{- include "common.probes" . | nindent 10 }}
+    charts/users/templates/deployment.yaml: |
+                {{- include "common.probes" . | nindent 10 }}
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: copied-probe-block-out-of-date
+      match: required
+      severity: P2
+      location:
+        location_intent: file
+        path: charts/billing/templates/deployment.yaml
+        anchor: "readinessProbe:"
+      claim: >-
+        the billing chart copies the probe block instead of including the existing common.probes helper that orders and users use. The copy is already out of date: it lacks the failureThreshold and uses a 10s readiness period where the helper uses 5s.
+      defect_kind: duplicated-config
+
+metadata:
+  skill_set: [review-core]
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    A config block copied while a shared Helm helper exists, with one copy already stale.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]
