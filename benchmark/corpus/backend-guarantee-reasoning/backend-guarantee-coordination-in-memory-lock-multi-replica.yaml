@@ -1,0 +1,71 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. Coordination scope: a per-process lock guards a job that three replicas run.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-coordination-in-memory-lock-multi-replica
+title: "nightly_payout serializes with a threading.Lock while the deployment runs three replicas"
+
+input:
+  patch: |
+    diff --git a/app/scheduler.py b/app/scheduler.py
+    index 1111111..2222222 100644
+    --- a/app/scheduler.py
+    +++ b/app/scheduler.py
+    @@ -7,3 +7,10 @@
+         with _lock:
+             for account in ledger.open_accounts():
+                 ledger.apply_pending(account)
+    +
+    +
+    +def nightly_payout(ledger, payouts):
+    +    with _lock:
+    +        for payout in payouts.due():
+    +            payouts.send(payout)
+    +            payouts.mark_sent(payout)
+  base:
+    app/scheduler.py: |
+      import threading
+
+      _lock = threading.Lock()
+
+
+      def reconcile_balances(ledger):
+          with _lock:
+              for account in ledger.open_accounts():
+                  ledger.apply_pending(account)
+    deploy/billing-worker.yaml: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: billing-worker
+      spec:
+        replicas: 3
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: payout-lock-does-not-span-replicas
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/scheduler.py
+        symbol: nightly_payout
+        anchor: 'for payout in payouts.due():'
+      claim: >-
+        nightly_payout relies on single execution, but _lock is a threading.Lock that only serializes threads inside one process, and deploy/billing-worker.yaml sets replicas: 3. Each replica's scheduler can run the payout at once, so the same due payout is sent more than once because payouts.due() is read before mark_sent and nothing spans the replicas.
+      defect_kind: coordination-scope-process-local-lock
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Coordination scope with an in-memory lock. The deciding evidence (replicas: 3) sits in unchanged config, so the reviewer must read config and code together. Paired with the database-backed lock case so the dimension, not the mechanism, is what is checked.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

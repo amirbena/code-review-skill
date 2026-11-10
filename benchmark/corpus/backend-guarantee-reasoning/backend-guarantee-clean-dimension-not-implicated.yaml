@@ -1,0 +1,42 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. Clean: no shared state, repeatable work, stored data or external service is touched.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-clean-dimension-not-implicated
+title: "format_initials is a pure helper over an in-memory user object"
+
+input:
+  patch: |
+    diff --git a/app/names.py b/app/names.py
+    index 1111111..2222222 100644
+    --- a/app/names.py
+    +++ b/app/names.py
+    @@ -1,2 +1,6 @@
+     def format_name(user):
+         return f"{user.first} {user.last}"
+    +
+    +
+    +def format_initials(user):
+    +    return f"{user.first[0]}{user.last[0]}"
+  base:
+    app/names.py: |
+      def format_name(user):
+          return f"{user.first} {user.last}"
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    The change touches none of the guarantee dimensions, so the area is skipped and nothing is reported.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

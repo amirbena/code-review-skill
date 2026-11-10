@@ -1,0 +1,47 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. Clean: an atomic conditional update already covers the traced race.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-clean-atomic-conditional-update
+title: "claim_next reads pending ids then claims through an atomic conditional UPDATE"
+
+input:
+  patch: |
+    diff --git a/app/jobs.py b/app/jobs.py
+    index 1111111..2222222 100644
+    --- a/app/jobs.py
+    +++ b/app/jobs.py
+    @@ -1,3 +1,10 @@
+     def claim_job(db, job_id, worker):
+         rows = db.execute("UPDATE jobs SET owner = %s WHERE id = %s AND owner IS NULL", (worker, job_id))
+         return rows == 1
+    +
+    +
+    +def claim_next(db, worker):
+    +    for job_id in db.pending_job_ids():
+    +        if claim_job(db, job_id, worker):
+    +            return job_id
+    +    return None
+  base:
+    app/jobs.py: |
+      def claim_job(db, job_id, worker):
+          rows = db.execute("UPDATE jobs SET owner = %s WHERE id = %s AND owner IS NULL", (worker, job_id))
+          return rows == 1
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    The read of pending ids is not atomic, but claim_job's conditional UPDATE decides ownership in one statement, so the traced failure path is covered by the guard.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]
