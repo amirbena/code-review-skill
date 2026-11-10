@@ -1,0 +1,64 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. Coordination correctness: a distributed lock whose expiry is shorter than the work it protects.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-coordination-lock-expires-before-work-ends
+title: "export_orders shortens the lock TTL to 30 seconds while the protected export takes minutes"
+
+input:
+  patch: |
+    diff --git a/app/export.py b/app/export.py
+    index 1111111..2222222 100644
+    --- a/app/export.py
+    +++ b/app/export.py
+    @@ -2,7 +2,7 @@
+     
+     
+     def export_orders(db, storage):
+    -    with lock_client.acquire("orders-export", ttl_seconds=600):
+    +    with lock_client.acquire("orders-export", ttl_seconds=30):
+             rows = db.fetch_unexported_orders()
+             storage.write_batch(rows)
+             db.mark_exported(rows)
+  base:
+    app/export.py: |
+      import lock_client
+
+
+      def export_orders(db, storage):
+          with lock_client.acquire("orders-export", ttl_seconds=600):
+              rows = db.fetch_unexported_orders()
+              storage.write_batch(rows)
+              db.mark_exported(rows)
+    app/export_config.py: |
+      # Typical full export runtime in production: 4-6 minutes.
+      EXPORT_BATCH_ROWS = 50000
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: export-lock-ttl-shorter-than-runtime
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/export.py
+        symbol: export_orders
+        anchor: 'ttl_seconds=30'
+      claim: >-
+        The change lowers the lock TTL from 600 to 30 seconds, but app/export_config.py states a full export takes 4 to 6 minutes. The lock expires mid-export, a second executor acquires it, and both write and mark the same unexported rows, so the exclusive access the lock is meant to give is gone.
+      defect_kind: coordination-lock-expiry-shorter-than-work
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Coordination correctness with a library lock. The deciding fact (runtime of 4-6 minutes) is in a sibling file, not the diff. Second mechanism for the coordination dimension, distinct from the process-local lock case.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

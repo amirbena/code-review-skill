@@ -97,6 +97,7 @@ CAPABILITY_VALUES: frozenset[str] = frozenset(
 # builder and the backfill of existing corpus metadata both key off this.
 CAPABILITY_BY_CORPUS_DIRECTORY: dict[str, str] = {
     "analogue-placement-pattern": "analogue-placement-pattern",
+    "backend-guarantee-reasoning": "distributed-systems",
     "api-compatibility": "api-compatibility",
     "candidate-finding-validation": "candidate-finding-validation",
     "code-hygiene": "code-hygiene",

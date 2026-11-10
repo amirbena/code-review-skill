@@ -67,13 +67,12 @@ class StructureTests(unittest.TestCase):
                 with self.subTest(skill=name):
                     self.assertIn((root / RULE_FILE[name]).resolve(), linked)
 
-    def test_no_runbook_loading_inventory_or_version_line(self) -> None:
+    def test_no_runbook_or_loading_inventory(self) -> None:
         for name in DEPTH:
             text = skill_md(name)
             with self.subTest(skill=name):
                 self.assertFalse((skill_dir(name) / "runbooks").exists())
                 self.assertIsNone(re.search(r"^## 2\.", text, re.M))
-                self.assertIsNone(re.search(r"^version:", text, re.M))
 
     def test_procedure_is_inline_and_numbered(self) -> None:
         for name in DEPTH:
@@ -92,7 +91,7 @@ class SelectionSurfaceTests(unittest.TestCase):
             with self.subTest(skill=name):
                 self.assertIsNotNone(match)
                 fields = dict(line.split(": ", 1) for line in match.group(1).splitlines())
-                self.assertEqual(set(fields), {"name", "description"})
+                self.assertEqual(set(fields), {"name", "version", "description"})
                 self.assertEqual(fields["name"], name)
                 self.assertLessEqual(len(fields["description"]), 200)
 

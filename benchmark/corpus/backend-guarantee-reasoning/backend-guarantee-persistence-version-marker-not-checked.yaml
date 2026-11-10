@@ -1,0 +1,74 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. Persistence compatibility: a version marker is written but never read back.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-persistence-version-marker-not-checked
+title: "project switches the stored checkpoint from event ids to sequence numbers and bumps a version nothing checks"
+
+input:
+  patch: |
+    diff --git a/app/projection.py b/app/projection.py
+    index 1111111..2222222 100644
+    --- a/app/projection.py
+    +++ b/app/projection.py
+    @@ -1,4 +1,4 @@
+    -SCHEMA_VERSION = 1
+    +SCHEMA_VERSION = 2
+     
+     
+     def read_state(store):
+    @@ -11,6 +11,6 @@
+     
+     
+     def project(events, store, view):
+    -    for event in events.after(read_state(store)):
+    +    for event in events.after_sequence(read_state(store)):
+             view.apply(event)
+             write_state(store, event.id)
+  base:
+    app/projection.py: |
+      SCHEMA_VERSION = 1
+
+
+      def read_state(store):
+          raw = store.get("projection-state")
+          return raw["last_event_id"] if raw else 0
+
+
+      def write_state(store, last_event_id):
+          store.put("projection-state", {"schema": SCHEMA_VERSION, "last_event_id": last_event_id})
+
+
+      def project(events, store, view):
+          for event in events.after(read_state(store)):
+              view.apply(event)
+              write_state(store, event.id)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: checkpoint-meaning-changed-without-version-check
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/projection.py
+        symbol: read_state
+        anchor: 'events.after_sequence(read_state(store))'
+      claim: >-
+        The change reads the stored last_event_id as a sequence number via after_sequence, and bumps SCHEMA_VERSION to 2, but read_state never looks at the stored schema field. Checkpoints written as event ids by version 1 are used as sequence numbers, so the projection replays or skips events after upgrade with no detection or recovery.
+      defect_kind: persistence-version-marker-unchecked
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Second persistence mechanism: a version marker exists but is write-only. Confirms the dimension is checking that stored state is validated, not looking for a cursor.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

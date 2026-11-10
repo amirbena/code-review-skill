@@ -1,0 +1,67 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. Persistence compatibility: a stored offset cursor outlives a change to the ordering it indexes.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-persistence-cursor-after-sort-change
+title: "sync_orders starts sorting by created_at while the persisted offset was recorded under the old order"
+
+input:
+  patch: |
+    diff --git a/app/sync.py b/app/sync.py
+    index 1111111..2222222 100644
+    --- a/app/sync.py
+    +++ b/app/sync.py
+    @@ -10,6 +10,6 @@
+     
+     def sync_orders(source, store, sink):
+         cursor = load_cursor(store)
+    -    batch = source.list_orders(offset=cursor["offset"], limit=PAGE_SIZE)
+    +    batch = source.list_orders(offset=cursor["offset"], limit=PAGE_SIZE, sort="created_at")
+         sink.write(batch)
+         store.put("sync-cursor", json.dumps({"offset": cursor["offset"] + len(batch)}))
+  base:
+    app/sync.py: |
+      import json
+
+      PAGE_SIZE = 100
+
+
+      def load_cursor(store):
+          raw = store.get("sync-cursor")
+          return json.loads(raw) if raw else {"offset": 0}
+
+
+      def sync_orders(source, store, sink):
+          cursor = load_cursor(store)
+          batch = source.list_orders(offset=cursor["offset"], limit=PAGE_SIZE)
+          sink.write(batch)
+          store.put("sync-cursor", json.dumps({"offset": cursor["offset"] + len(batch)}))
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: stored-offset-invalid-after-sort-change
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/sync.py
+        symbol: sync_orders
+        anchor: 'sort="created_at"'
+      claim: >-
+        sync-cursor stores a bare numeric offset into the source listing. The change adds sort=created_at, so an offset saved under the previous ordering now points at a different position. Existing stored cursors are neither detected nor reset, so orders are skipped or written twice after deploy.
+      defect_kind: persistence-stored-cursor-invalidated-by-change
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Persisted cursor invalidated by a behaviour change. Paired with the version-marker case so the dimension is stored-state compatibility, not cursors specifically.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]
