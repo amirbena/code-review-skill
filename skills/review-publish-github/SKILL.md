@@ -1,6 +1,6 @@
 ---
 name: review-publish-github
-version: 3.1.0
+version: 3.2.0
 description: Publishes a finished review-core review to its GitHub pull request as one batched review with inline comments and a summary. Use only when the user asks to publish or post the review.
 ---
 

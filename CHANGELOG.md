@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v3.2.0 — 2026-11-10
+
+### Changed
+
+- `review-backend` now reasons from the guarantees a change relies on (coordination, persisted state, lifecycle, external contracts) instead of a per-shape concurrency list (#879).
+
 ## v3.1.0 — 2026-11-10
 
 ### Changed
