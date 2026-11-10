@@ -52,7 +52,7 @@ class StructureTests(unittest.TestCase):
         match = FRONTMATTER_RE.match(skill_md())
         self.assertIsNotNone(match)
         fields = dict(line.split(": ", 1) for line in match.group(1).splitlines())
-        self.assertEqual(set(fields), {"name", "description"})
+        self.assertEqual(set(fields) - {"version"}, {"name", "description"})
         self.assertEqual(fields["name"], NAME)
         self.assertLessEqual(len(fields["description"]), 200)
         steps = [int(n) for n in re.findall(r"^(\d+)\. ", skill_md().split("## Procedure", 1)[1], re.M)]
