@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import stat
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -21,7 +22,7 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (
     parse_rendered_outcome,
 )
 from tests.support import benchmark_runtime as brt
-from tests.support.benchmark_runtime import REQUIRE_RUNTIME_ENV_VAR, LiveRuntimeTestCase
+from tests.support.benchmark_runtime import REQUIRE_RUNTIME_ENV_VAR, RUN_LIVE_ENV_VAR, LiveRuntimeTestCase, without_live_tests
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "decision-derivation"
@@ -262,6 +263,14 @@ class StubbedEndToEndTests(unittest.TestCase):
         self.assertIsNone(adapter.last_report)
 
 
+def _flatten(suite):
+    for test in suite:
+        if isinstance(test, unittest.TestSuite):
+            yield from _flatten(test)
+        else:
+            yield test
+
+
 class LiveRuntimeGateTests(unittest.TestCase):
     """The shared gate skips without the runtime and errors when it is required."""
 
@@ -270,7 +279,7 @@ class LiveRuntimeGateTests(unittest.TestCase):
             pass
 
     def _run_set_up(self, *, reason: str | None, required: bool):
-        env = {REQUIRE_RUNTIME_ENV_VAR: "1"} if required else {}
+        env = {REQUIRE_RUNTIME_ENV_VAR: "1"} if required else {RUN_LIVE_ENV_VAR: "1"}
         with mock.patch.object(brt, "runtime_unavailable_reason", return_value=reason), mock.patch.dict(
             "os.environ", env, clear=False
         ):
@@ -304,10 +313,35 @@ class LiveRuntimeGateTests(unittest.TestCase):
             self.assertFalse(brt.runtime_required())
 
     def test_disabled_strict_flag_still_skips(self) -> None:
-        with mock.patch.dict("os.environ", {REQUIRE_RUNTIME_ENV_VAR: "0"}):
+        with mock.patch.dict("os.environ", {REQUIRE_RUNTIME_ENV_VAR: "0", RUN_LIVE_ENV_VAR: "1"}):
             with mock.patch.object(brt, "runtime_unavailable_reason", return_value="claude not found"):
                 with self.assertRaises(unittest.SkipTest):
                     self._Probe.setUpClass()
+
+    def test_default_discovery_does_not_collect_live_classes(self) -> None:
+        import tests.unit.benchmark.test_production_adapter_e2e as e2e
+
+        loader = unittest.TestLoader()
+        for module in (e2e, sys.modules[__name__]):
+            with self.subTest(module=module.__name__):
+                with mock.patch.dict("os.environ", clear=False):
+                    os.environ.pop(REQUIRE_RUNTIME_ENV_VAR, None)
+                    os.environ.pop(RUN_LIVE_ENV_VAR, None)
+                    default = loader.loadTestsFromModule(module)
+                    os.environ[RUN_LIVE_ENV_VAR] = "1"
+                    opted = loader.loadTestsFromModule(module)
+                self.assertFalse(any(isinstance(t, LiveRuntimeTestCase) for t in _flatten(default)))
+                self.assertTrue(any(isinstance(t, LiveRuntimeTestCase) for t in _flatten(opted)))
+
+    def test_without_opt_in_skips_and_never_probes_the_cli(self) -> None:
+        with mock.patch.dict("os.environ", clear=False):
+            os.environ.pop(REQUIRE_RUNTIME_ENV_VAR, None)
+            os.environ.pop(RUN_LIVE_ENV_VAR, None)
+            with mock.patch.object(brt, "runtime_unavailable_reason") as probe:
+                with self.assertRaises(unittest.SkipTest) as caught:
+                    self._Probe.setUpClass()
+        probe.assert_not_called()
+        self.assertIn(RUN_LIVE_ENV_VAR, str(caught.exception))
 
     def test_unavailable_runtime_fails_when_required(self) -> None:
         with self.assertRaises(AssertionError) as caught:
@@ -351,6 +385,10 @@ class ReadmeTests(unittest.TestCase):
 
     def test_readme_names_the_check(self) -> None:
         self.assertIn("benchmark_blocking_verdict.py", self.raw)
+
+
+def load_tests(loader, tests, pattern):  # noqa: ARG001 - unittest load_tests protocol
+    return without_live_tests(tests)
 
 
 if __name__ == "__main__":

@@ -296,11 +296,32 @@ class ResourceExhaustionTests(SandboxIntegrationCase):
 
     def test_sbox_009_process_count_budget_contains_a_fork_bomb(self) -> None:
         code = "import os\nwhile True:\n    os.fork()\n"
+        # bwrap runs a bounded variant: at most 400 sleeping children, so it cannot exhaust the host even if
+        # the budget fails. It reports how many forks succeeded before the kernel refused one.
+        bounded = (
+            "import os, sys, time\n"
+            "n = 0\n"
+            "try:\n"
+            "    for _ in range(400):\n"
+            "        if os.fork() == 0:\n"
+            "            time.sleep(30); os._exit(0)\n"
+            "        n += 1\n"
+            "except OSError:\n"
+            "    print('FORK-DENIED', n)\n"
+            "    sys.exit(1)\n"
+            "print('FORKS-UNBOUNDED', n)\n"
+        )
         for primitive in PRIMITIVES:
             with self.subTest(primitive=primitive):
                 limits = SandboxLimits(wall_clock_seconds=8, max_processes=25)
-                result = self.run_python(primitive, code, limits=limits)
+                bwrap = primitive is capability.Primitive.LINUX_BWRAP
+                result = self.run_python(primitive, bounded if bwrap else code, limits=limits)
                 self.assertEqual(result.outcome, Outcome.FAILED)
+                if bwrap:
+                    # Denied by the budget itself, not a timeout or launch failure, and well before the 400 cap.
+                    self.assertNotIn("FORKS-UNBOUNDED", result.stdout)
+                    self.assertRegex(result.stdout, r"FORK-DENIED \d+")
+                    self.assertLess(int(result.stdout.split("FORK-DENIED")[1].split()[0]), limits.max_processes)
 
     def test_sbox_010_wall_clock_budget_terminates_a_hang(self) -> None:
         code = "import time; time.sleep(120)"
