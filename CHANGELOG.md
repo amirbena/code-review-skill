@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v3.3.1 — 2026-11-11
+
+### Fixed
+
+- review-core now accounts for applicable checklist areas before the decision and verifies a guard covers the failure path before dismissing a candidate (#883).
+
 ## v3.3.0 — 2026-11-11
 
 ### Changed

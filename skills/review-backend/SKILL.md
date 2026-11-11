@@ -1,6 +1,6 @@
 ---
 name: review-backend
-version: 3.3.0
+version: 3.3.1
 description: "Adds backend depth to a code review: API contracts, databases and migrations, concurrency, performance, deployment and config, including IaC, Kubernetes/Helm and CI/CD."
 ---
 

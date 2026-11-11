@@ -1,6 +1,6 @@
 ---
 name: review-frontend
-version: 3.3.0
+version: 3.3.1
 description: "Adds frontend depth to a code review: UI behavior, state, accessibility, and optional rendered inspection after render consent."
 ---
 
