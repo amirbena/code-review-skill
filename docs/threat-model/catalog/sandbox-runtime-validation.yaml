@@ -173,7 +173,7 @@ scenarios:
   protected_asset: host process-table / scheduler resources
   required_capability_state: hard process-count budget enforced
   enforcement_owner: '#302'
-  enforcement_point: 'scripts/sandbox/process_exec.py (_preexec RLIMIT_NPROC budget) and scripts/sandbox/docker_runner.py (--pids-limit)'
+  enforcement_point: 'scripts/sandbox/process_exec.py (_preexec RLIMIT_NPROC budget), scripts/sandbox/linux_bwrap.py (prlimit --nproc inside the namespace) and scripts/sandbox/docker_runner.py (--pids-limit)'
   expected_safe_outcome: process creation beyond the budget is refused/killed; the sandbox and host remain
     responsive
   expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION

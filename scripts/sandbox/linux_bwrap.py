@@ -45,7 +45,8 @@ def run(request: SandboxRequest, workspace: SandboxWorkspace) -> BoundedRunResul
     argv += ["--remount-ro", "/"]
     argv += ["--setenv", "HOME", "/home/sandbox"]
     argv += ["--setenv", "PATH", "/usr/bin:/bin:/usr/sbin:/sbin"]
-    argv += list(request.argv)
+    # RLIMIT_NPROC set outside the user namespace does not cap processes created inside it; set it inside.
+    argv += ["prlimit", f"--nproc={request.limits.max_processes}", "--", *request.argv]
 
     return run_bounded(
         tuple(argv),

@@ -73,6 +73,13 @@ class LinuxBwrapArgvTests(unittest.TestCase):
         self.assertTrue(all(i < remount for i in mounts))
         self.assertLess(remount, argv.index("payload"))
 
+    def test_process_budget_is_set_inside_the_namespace_around_the_payload(self) -> None:
+        request = SandboxRequest(
+            argv=("payload", "-x"), source_dir=self.source, limits=SandboxLimits(max_processes=25)
+        )
+        argv = self._run(request)[0][0]
+        self.assertEqual(list(argv[-5:]), ["prlimit", "--nproc=25", "--", "payload", "-x"])
+
     def test_read_only_inputs_are_ro_bound(self) -> None:
         extra = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, extra, True)
