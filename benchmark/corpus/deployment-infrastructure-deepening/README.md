@@ -42,6 +42,11 @@ isolates one outcome so a regression in any one is unambiguous. The four
 | [`…-db-resize-impact-needs-plan-output.yaml`](deployment-infrastructure-deepening-db-resize-impact-needs-plan-output.yaml) | missing evidence requiring a Context gap | raise **no blocking finding** and make no outage claim; at most one optional, non-asserting observation | `clean` |
 | [`…-comment-and-unused-label-edit-not-activated-clean.yaml`](deployment-infrastructure-deepening-comment-and-unused-label-edit-not-activated-clean.yaml) | non-activation: manifest file, no behavior property | report **nothing** | `clean` |
 | [`…-dockerfile-from-only-boundary-clean.yaml`](deployment-infrastructure-deepening-dockerfile-from-only-boundary-clean.yaml) | #181 boundary: `FROM`-only change | report **nothing** from this capability (supply-chain pass owns it) | `clean` |
+| [`…-terraform-rename-without-moved-recreates-database.yaml`](deployment-infrastructure-deepening-terraform-rename-without-moved-recreates-database.yaml) | IaC lifecycle (#875) | report one **P1**: a database resource label is renamed with no `moved` block, so the plan destroys and recreates it | `changes-required` |
+| [`…-rolebinding-widened-to-cluster-admin.yaml`](deployment-infrastructure-deepening-rolebinding-widened-to-cluster-admin.yaml) | Kubernetes privilege (#875) | report one **P1**: a read-only Role binding is re-pointed to `cluster-admin` | `changes-required` |
+| [`…-prod-deploy-loses-environment-approval.yaml`](deployment-infrastructure-deepening-prod-deploy-loses-environment-approval.yaml) | CI/CD deploy safety (#875) | report one **P1**: the deploy job drops `environment: production`, removing the approval gate | `changes-required` |
+| [`…-terraform-rename-with-moved-block-clean.yaml`](deployment-infrastructure-deepening-terraform-rename-with-moved-block-clean.yaml) | guard (#875) | report **nothing**: the rename carries a `moved` block | `clean` |
+| [`…-scoped-role-added-clean.yaml`](deployment-infrastructure-deepening-scoped-role-added-clean.yaml) | guard (#875) | report **nothing**: a namespaced Role with `get`/`list` on one resource | `clean` |
 
 The "safe change" case activates the capability (a resource-bounds property
 changes) and stays quiet on evidence; the two non-activation cases fail

@@ -83,3 +83,8 @@ child.
 | `deployment-infrastructure-deepening-probe-port-no-longer-matches-listener` | `deployment-infrastructure-deepening` | core-floor | One reference hop from the changed port finds the probes and service still on the old one. |
 | `deployment-infrastructure-deepening-smoke-test-failure-no-longer-gates-deploy` | `deployment-infrastructure-deepening` | core-floor | continue-on-error on the only gate before production; visible in the workflow. |
 | `deployment-infrastructure-deepening-workflow-permissions-widened` | `deployment-infrastructure-deepening` | uplift | Needs CI threat reasoning: write token plus a pull_request trigger running untrusted code. |
+| `deployment-infrastructure-deepening-terraform-rename-without-moved-recreates-database` | `deployment-infrastructure-deepening` | uplift | Needs IaC lifecycle reasoning over resource addressing and state. |
+| `deployment-infrastructure-deepening-rolebinding-widened-to-cluster-admin` | `deployment-infrastructure-deepening` | uplift | Needs RBAC privilege-scope reasoning over infra manifests. |
+| `deployment-infrastructure-deepening-prod-deploy-loses-environment-approval` | `deployment-infrastructure-deepening` | uplift | Needs CI deploy-safety reasoning about environment protection. |
+| `deployment-infrastructure-deepening-terraform-rename-with-moved-block-clean` | `deployment-infrastructure-deepening` | clean-guard | Guard for IaC lifecycle reasoning. |
+| `deployment-infrastructure-deepening-scoped-role-added-clean` | `deployment-infrastructure-deepening` | clean-guard | Guard for RBAC privilege-scope reasoning. |
