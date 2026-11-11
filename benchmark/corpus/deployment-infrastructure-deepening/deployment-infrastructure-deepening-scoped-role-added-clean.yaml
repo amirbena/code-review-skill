@@ -1,0 +1,62 @@
+# Deployment/infrastructure-deepening corpus case (Issue #875, parent #740).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Guard for the Kubernetes privilege subsection: a new namespaced Role
+# with narrow verbs on one resource is not a widening.
+
+format: benchmark-case/v3
+
+id: deployment-infrastructure-deepening-scoped-role-added-clean
+title: "rbac.yaml adds a namespaced Role limited to get and list on configmaps"
+
+input:
+  patch: |
+    diff --git a/k8s/rbac.yaml b/k8s/rbac.yaml
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/k8s/rbac.yaml
+    @@ -0,0 +1,23 @@
+    +apiVersion: rbac.authorization.k8s.io/v1
+    +kind: Role
+    +metadata:
+    +  name: reporter-read
+    +  namespace: reports
+    +rules:
+    +  - apiGroups: [""]
+    +    resources: ["configmaps"]
+    +    verbs: ["get", "list"]
+    +---
+    +apiVersion: rbac.authorization.k8s.io/v1
+    +kind: RoleBinding
+    +metadata:
+    +  name: reporter
+    +  namespace: reports
+    +roleRef:
+    +  apiGroup: rbac.authorization.k8s.io
+    +  kind: Role
+    +  name: reporter-read
+    +subjects:
+    +  - kind: ServiceAccount
+    +    name: reporter
+    +    namespace: reports
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Guard for RBAC privilege-scope reasoning."
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    The Role grants read-only verbs on a single resource inside one
+    namespace and the binding targets that Role, so nothing is widened.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

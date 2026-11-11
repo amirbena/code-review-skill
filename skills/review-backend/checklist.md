@@ -49,12 +49,39 @@ external service; otherwise report it skipped.
 
 ## Deployment and config
 
+Ownership: `review-backend` owns permission and privilege scope as
+configured in infra artifacts, and deploy safety; `review-security` keeps
+code-level auth, secrets handling and supply chain. A finding both would
+raise is one root cause.
+
 - A config key, port, path, env var or flag renamed or changed in one place
   while another file still reads the old one (probes, services, templates,
   compose, workflows).
-- Resource limits, replicas, timeouts and health checks that no longer fit
-  the change, or that break an assumption in application code.
+- Resource limits, replicas, termination grace period, timeouts and health
+  checks that no longer fit the change, or that break an assumption in
+  application code.
 - CI/CD gates weakened (`continue-on-error`, skipped steps), widened
   permissions, unpinned references, changed secrets handling.
 - Runtime or tool minimums raised without the docs, images and CI that
   state them.
+
+IaC lifecycle and state:
+
+- A stateful resource replaced or destroyed: rename without `moved` or
+  `import`, ForceNew or immutable attribute edits, `count`/`for_each`
+  re-addressing.
+- `prevent_destroy` or deletion protection removed; state backend or
+  provider changes. Where only a plan output decides it, list it as not
+  investigated.
+
+Kubernetes/Helm:
+
+- Wildcard RBAC, a binding widened to `cluster-admin`, `privileged`, root or
+  host namespaces, a removed NetworkPolicy, a wider Service or Ingress.
+- Immutable-field edits (selector, `volumeClaimTemplates`); rollout
+  settings (PDB, strategy) that break the change's assumptions.
+
+CI/CD deploy safety:
+
+- Environment protection or approval removed; overlapping deploys with no
+  concurrency group; OIDC trust or role scope widened; no rollback path.

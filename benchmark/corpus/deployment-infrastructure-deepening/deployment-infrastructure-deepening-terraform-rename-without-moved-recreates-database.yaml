@@ -1,0 +1,71 @@
+# Deployment/infrastructure-deepening corpus case (Issue #875, parent #740).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# IaC lifecycle property: renaming a resource label without a moved block
+# makes Terraform plan destroy the old address and create a new one.
+
+format: benchmark-case/v3
+
+id: deployment-infrastructure-deepening-terraform-rename-without-moved-recreates-database
+title: "db.tf renames the orders database resource label with no moved block"
+
+input:
+  patch: |
+    diff --git a/infra/db.tf b/infra/db.tf
+    index 1111111..2222222 100644
+    --- a/infra/db.tf
+    +++ b/infra/db.tf
+    @@ -1,7 +1,7 @@
+    -resource "aws_db_instance" "orders" {
+    +resource "aws_db_instance" "orders_primary" {
+       identifier          = "orders-prod"
+       engine              = "postgres"
+       instance_class      = "db.r6g.large"
+       allocated_storage   = 500
+       skip_final_snapshot = true
+     }
+  base:
+    infra/db.tf: |
+      resource "aws_db_instance" "orders" {
+        identifier          = "orders-prod"
+        engine              = "postgres"
+        instance_class      = "db.r6g.large"
+        allocated_storage   = 500
+        skip_final_snapshot = true
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: stateful-resource-renamed-without-moved
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: infra/db.tf
+        anchor: 'resource "aws_db_instance" "orders_primary"'
+      claim: >-
+        The aws_db_instance resource label changes from orders to
+        orders_primary and no moved block or state move accompanies it, so
+        Terraform sees the old address as removed and a new one as added.
+        The plan destroys the production orders database and creates an
+        empty one; with skip_final_snapshot = true no final snapshot is
+        taken, so the data is lost.
+      defect_kind: iac-stateful-resource-readdressed-without-moved
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs IaC lifecycle reasoning over resource addressing and state."
+  source: crafted
+  tags: [regression]
+  rationale: >-
+    Pins the IaC lifecycle and state subsection: a one-token label change
+    on a stateful resource is a destroy/create, visible only by reasoning
+    about Terraform addressing.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [regression]
+    affected_surface: [unclassified]

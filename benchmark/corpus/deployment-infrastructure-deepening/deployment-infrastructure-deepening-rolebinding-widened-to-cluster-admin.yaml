@@ -1,0 +1,91 @@
+# Deployment/infrastructure-deepening corpus case (Issue #875, parent #740).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Kubernetes privilege property: a namespaced reporter binding is pointed
+# at the cluster-admin ClusterRole.
+
+format: benchmark-case/v3
+
+id: deployment-infrastructure-deepening-rolebinding-widened-to-cluster-admin
+title: "rbac.yaml re-points the reporter RoleBinding from a read-only Role to cluster-admin"
+
+input:
+  patch: |
+    diff --git a/k8s/rbac.yaml b/k8s/rbac.yaml
+    index 1111111..2222222 100644
+    --- a/k8s/rbac.yaml
+    +++ b/k8s/rbac.yaml
+    @@ -13,11 +13,11 @@ kind: RoleBinding
+     metadata:
+       name: reporter
+       namespace: reports
+     roleRef:
+       apiGroup: rbac.authorization.k8s.io
+    -  kind: Role
+    -  name: reporter-read
+    +  kind: ClusterRole
+    +  name: cluster-admin
+     subjects:
+       - kind: ServiceAccount
+         name: reporter
+         namespace: reports
+  base:
+    k8s/rbac.yaml: |
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      metadata:
+        name: reporter-read
+        namespace: reports
+      rules:
+        - apiGroups: [""]
+          resources: ["configmaps"]
+          verbs: ["get", "list"]
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: reporter
+        namespace: reports
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: Role
+        name: reporter-read
+      subjects:
+        - kind: ServiceAccount
+          name: reporter
+          namespace: reports
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: rolebinding-widened-to-cluster-admin
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: k8s/rbac.yaml
+        anchor: 'name: cluster-admin'
+      claim: >-
+        The reporter RoleBinding now references the cluster-admin
+        ClusterRole instead of the reporter-read Role, which only allowed
+        get and list on configmaps. The reporter ServiceAccount gains
+        full control of every resource in the reports namespace, and a
+        compromised reporter pod would hold that authority.
+      defect_kind: k8s-rbac-binding-widened-to-cluster-admin
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs RBAC privilege-scope reasoning over infra manifests."
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Pins the Kubernetes/Helm subsection: a two-line roleRef edit widens
+    privilege from read-only to full control, visible only by comparing
+    against the Role it replaced.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [security]
+    affected_surface: [unclassified]
