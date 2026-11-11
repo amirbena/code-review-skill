@@ -234,8 +234,9 @@ with `REVIEW CLEAN` fails the check.
 Every live class in the benchmark unit tests (this corpus's two,
 `test_production_adapter_e2e.py`) shares one gate,
 `tests/support/benchmark_runtime.py`: it probes the runtime once, lazily,
-through `check_runtime_available`. By default an unavailable runtime
-**skips** with the reason printed, never a fabricated pass. Setting
-`BENCHMARK_REQUIRE_RUNTIME=1` (or `true`/`yes`; `0`/`false` leave it off) turns that skip into an **error**, for
+through `check_runtime_available`. Live tests are opt-in: by default they
+**skip** without touching the CLI, and `BENCHMARK_RUN_LIVE=1` runs them (an
+unavailable runtime then skips with the reason printed, never a fabricated
+pass). Setting `BENCHMARK_REQUIRE_RUNTIME=1` (or `true`/`yes`; `0`/`false` leave it off) turns that skip into an **error**, for
 environments (such as a nightly lane) where a missing runtime must fail
 the run rather than go unnoticed.

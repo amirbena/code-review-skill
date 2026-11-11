@@ -7,12 +7,32 @@ import os
 import unittest
 
 REQUIRE_RUNTIME_ENV_VAR = "BENCHMARK_REQUIRE_RUNTIME"
+RUN_LIVE_ENV_VAR = "BENCHMARK_RUN_LIVE"
 _TRUTHY = frozenset({"1", "true", "yes"})
 
 
 def runtime_required() -> bool:
     """Only an explicit 1/true/yes enables strict mode; `0`/`false` do not."""
     return os.environ.get(REQUIRE_RUNTIME_ENV_VAR, "").strip().lower() in _TRUTHY
+
+
+def live_opted_in() -> bool:
+    """Live runs are explicit: `BENCHMARK_RUN_LIVE` or strict `BENCHMARK_REQUIRE_RUNTIME` as 1/true/yes."""
+    return runtime_required() or os.environ.get(RUN_LIVE_ENV_VAR, "").strip().lower() in _TRUTHY
+
+
+def without_live_tests(suite: unittest.TestSuite) -> unittest.TestSuite:
+    """For a module's ``load_tests``: drop live classes from discovery unless opted in, so a default
+    run never collects them (``unittest discover`` honours ``load_tests``)."""
+    if live_opted_in():
+        return suite
+    kept = unittest.TestSuite()
+    for test in suite:
+        if isinstance(test, unittest.TestSuite):
+            kept.addTest(without_live_tests(test))
+        elif not isinstance(test, LiveRuntimeTestCase):
+            kept.addTest(test)
+    return kept
 
 
 @functools.lru_cache(maxsize=1)
@@ -28,12 +48,15 @@ def runtime_unavailable_reason() -> str | None:
 
 
 class LiveRuntimeTestCase(unittest.TestCase):
-    """Skips with the reason when the runtime is unavailable; errors instead
-    when ``BENCHMARK_REQUIRE_RUNTIME`` is on, so a missing runtime is never a pass."""
+    """Skips unless a live run is opted in (never probes the CLI by default); then
+    skips with the reason when the runtime is unavailable, or errors instead when
+    ``BENCHMARK_REQUIRE_RUNTIME`` is on, so a missing runtime is never a pass."""
 
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
+        if not live_opted_in():
+            raise unittest.SkipTest(f"live model test; set {RUN_LIVE_ENV_VAR}=1 (or {REQUIRE_RUNTIME_ENV_VAR}=1) to run it")
         reason = runtime_unavailable_reason()
         if reason is None:
             return
