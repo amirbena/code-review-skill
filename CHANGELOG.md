@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v3.3.0 — 2026-11-11
+
+### Changed
+
+- review-backend now reviews infrastructure-only changes with IaC lifecycle, Kubernetes/Helm privilege and CI/CD deploy-safety prompts (#881).
+
 ## v3.2.0 — 2026-11-10
 
 ### Changed

@@ -1,6 +1,6 @@
 ---
 name: review-requirements
-version: 3.2.0
+version: 3.3.0
 description: Verifies a change against a Jira key, GitHub Issue or pasted acceptance criteria you supply, with a status and evidence per requirement. Use for "does this meet PROJ-123?".
 ---
 

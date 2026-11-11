@@ -1,6 +1,6 @@
 ---
 name: review-security
-version: 3.2.0
+version: 3.3.0
 description: "Adds security depth to a code review: auth, injection, secrets, crypto, trust boundaries, dependencies. Use when a change touches those."
 ---
 
