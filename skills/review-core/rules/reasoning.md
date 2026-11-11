@@ -91,7 +91,10 @@ For each behavior change, ask:
   describe the new behavior?
 
 The checklist points where to look. It is not a report section, and an
-item with nothing to say is skipped.
+item that does not apply to this change is skipped. Before the decision,
+confirm that every item that does apply was examined, ruled out by code
+you read, or listed as not investigated. This accounts for the concern;
+it does not widen the investigation.
 
 ## Bounded investigation
 
@@ -123,7 +126,9 @@ A candidate becomes a finding only when all of these hold:
 
 Before keeping a candidate, look once for the reason it might be wrong:
 the guard elsewhere, the caller that never passes that value, the
-framework default. Drop it if that reason holds. Prefer no finding to a
+framework default. Drop it if that reason holds, and only after
+confirming it covers the specific input or failure path of the
+suspicion; a guard that does not cover that path does not dismiss it. Prefer no finding to a
 speculative one, but never drop a confirmed defect to keep a report
 short.
 
