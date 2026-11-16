@@ -10,6 +10,13 @@ does and **which behavior changes**: what a caller, user, operator or
 stored record sees before and after. Tests, configuration, migrations,
 schemas and documentation in the change are part of it.
 
+Then establish, independently, what the change must guarantee: the
+invariants and contracts it must keep, the entry points that reach it, and
+what its callers and consumers rely on, from the diff, the base code and
+any acceptance criteria. A PR description, commit message or earlier
+review says what the author intended or concluded. Check those claims
+against the code; they never replace that check.
+
 Start from the diff, then read enough of each changed file to judge every
 hunk in its context:
 
@@ -112,7 +119,11 @@ it does not widen the investigation.
 
 ## Bounded investigation
 
-When something looks wrong, investigate it before deciding:
+When something looks wrong, or a changed component plausibly interacts
+with unchanged code in a way the diff does not show, investigate before
+deciding. Explore the hypothesis freely; only what the code confirms
+becomes a finding. Depth follows the change's complexity and risk: a
+simple, low-risk change needs no more than the direct-reference check.
 
 1. Name the suspicion in one sentence: which input or state leads to
    which wrong result.
@@ -137,6 +148,12 @@ A candidate becomes a finding only when all of these hold:
 - the code you read shows it, and nothing you read prevents it, such as a
   guard, a validator, a caller's precondition or a test;
 - it matters to behavior, safety, data or maintainability, not to taste.
+
+In the finding's `evidence`, say whether an existing entry point reaches
+the defect today and why the guards and tests you read do not prevent it.
+A defect no current path reaches is latent: report it only when the
+change makes it reachable or leaves a real trap, and rate it on its
+exposure, usually P2. Do not present a latent defect as active.
 
 Before keeping a candidate, look once for the reason it might be wrong:
 the guard elsewhere, the caller that never passes that value, the
