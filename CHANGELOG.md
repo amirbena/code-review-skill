@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v3.5.0 — 2026-11-16
+
+### Changed
+
+- Review reasoning now establishes what a change must guarantee, explores interaction hypotheses with risk-proportionate depth, and states whether a defect is reached today or latent (#888).
+
 ## v3.4.0 — 2026-11-16
 
 ### Changed
