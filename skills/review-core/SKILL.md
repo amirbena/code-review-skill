@@ -1,6 +1,6 @@
 ---
 name: review-core
-version: 3.3.1
+version: 3.4.0
 description: Read-only code review of a local Git change or a GitHub pull request. Returns evidence-backed P0/P1/P2 findings and one mechanical decision.
 ---
 

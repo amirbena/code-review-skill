@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v3.4.0 — 2026-11-16
+
+### Changed
+
+- Review rules no longer let PR framing defer explicit requirements, allow concrete maintainability findings on correct code, and qualify REVIEW CLEAN when non-blocking findings or unmet requirements exist (#886).
+
 ## v3.3.1 — 2026-11-11
 
 ### Fixed
