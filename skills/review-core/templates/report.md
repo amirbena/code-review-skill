@@ -40,6 +40,8 @@ diff line by line. Keep the section order below. Omit a section marked
 - <trigger> — <what it left unreviewed>
 
 **Result: <REVIEW CLEAN | CHANGES REQUIRED | REVIEW INCOMPLETE>** (P0: <n>, P1: <n>, P2: <n>)
+
+<only when the result is REVIEW CLEAN and P2 > 0 or a requirement is partially met or not met: one line, e.g. "Clean = no blocking findings; <n> non-blocking P2 finding(s) and <n> unmet requirement(s) are listed above.">
 ````
 
 ## JSON result (only on request)
