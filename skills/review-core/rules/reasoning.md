@@ -71,6 +71,20 @@ Default to P2. Use P1 only when the copies already produce a wrong result
 under the credible-defect bar below, such as accepting input the canonical
 copy rejects.
 
+## Maintainability
+
+Correct behavior does not exempt the code from review. Report a P2 when
+the code you read shows a concrete, actionable cost: needless complexity
+or abstraction, avoidable duplication, unclear naming or control flow
+that hides intent, or inconsistency with the surrounding code, and say
+what a maintainer pays for it. No wrong-result input is needed for this;
+it stays P2 unless it also causes a defect.
+
+Do not report style taste, speculative future-proofing, a refactor that
+adds more complexity than it removes, or pre-existing code the change does
+not touch. A readable, maintainable change gets no maintainability
+finding; do not add one to show depth.
+
 ## Implication checklist
 
 For each behavior change, ask:
