@@ -1,6 +1,6 @@
 ---
 name: review-runtime-check
-version: 3.5.0
+version: 3.5.1
 description: Confirms or dismisses specific review findings by running a targeted test or minimal reproduction, sandboxed by default. Use when asked to run or confirm something.
 ---
 

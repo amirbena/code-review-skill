@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v3.5.1 — 2026-11-17
+
+### Fixed
+
+- Review Core rules no longer contradict each other on duplication ownership and the credible-defect bar for non-correctness findings; read-only command guidance covers `git blame` and `gh issue view` (#890).
+
 ## v3.5.0 — 2026-11-16
 
 ### Changed
