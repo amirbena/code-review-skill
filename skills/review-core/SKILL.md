@@ -1,6 +1,6 @@
 ---
 name: review-core
-version: 3.0.0
+version: 3.5.0
 description: Read-only code review of a local Git change or a GitHub pull request. Returns evidence-backed P0/P1/P2 findings and one mechanical decision.
 ---
 
@@ -56,7 +56,7 @@ these one-line descriptions:
 | `review-deep-investigation` | Lifts the investigation bound: wider tracing, root cause, affected tests, failure and null paths. |
 | `review-suggestions` | Adds non-blocking P2 maintainability, design and hygiene suggestions. |
 | `review-security` | Security deepening and dependency / supply-chain review. |
-| `review-backend` | APIs and contracts, databases and migrations, concurrency, performance, deployment and config. |
+| `review-backend` | APIs and contracts, databases and migrations, concurrency, performance, deployment and config, including IaC, Kubernetes/Helm and CI/CD. |
 | `review-frontend` | UI behavior, state, accessibility and rendered inspection. |
 | `review-runtime-check` | Runs a targeted test or minimal reproduction to confirm a finding. |
 

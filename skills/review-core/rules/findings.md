@@ -14,6 +14,11 @@ Every finding has exactly one severity.
   design weakness, a lower-risk test gap, misleading documentation. Never
   formatting or style taste.
 
+Severity follows actual impact, exposure and operational consequence. It
+never drops because the work is split across stacked PRs or a follow-up is
+planned, and a readability or maintainability finding is never raised to
+P1 for that reason alone.
+
 ## Evidence
 
 - **S4** — Every finding cites a location in the reviewed target, at the
@@ -57,4 +62,6 @@ listed as not investigated does not trigger it either.
   `CHANGES REQUIRED`. Otherwise it is `REVIEW CLEAN`. P2 findings never
   block, and an incomplete review is never rendered clean. To change the
   decision, change a finding's severity on its evidence, never the
-  decision itself.
+  decision itself. `REVIEW CLEAN` means no P0/P1 and no incomplete
+  trigger, not that nothing was reported: the report states any P2
+  findings and any unmet requirements beside it.

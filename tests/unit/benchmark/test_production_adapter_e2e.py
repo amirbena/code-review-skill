@@ -25,7 +25,7 @@ import unittest
 from runtime_platform.benchmark.scripts.benchmark_review_adapter import ProductionReviewerAdapter
 from runtime_platform.benchmark.reference import benchmark_metrics as bm
 from runtime_platform.benchmark.reference import benchmark_runner as br
-from tests.support.benchmark_runtime import LiveRuntimeTestCase
+from tests.support.benchmark_runtime import LiveRuntimeTestCase, without_live_tests
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
@@ -52,6 +52,10 @@ class ProductionAdapterEndToEndTests(LiveRuntimeTestCase):
         )
         metrics = bm.compute_run_metrics([case], run_result)
         self.assertEqual(len(metrics.as_dict()["cases"]), 1)
+
+
+def load_tests(loader, tests, pattern):  # noqa: ARG001 - unittest load_tests protocol
+    return without_live_tests(tests)
 
 
 if __name__ == "__main__":

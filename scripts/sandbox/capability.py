@@ -89,7 +89,8 @@ def _macos_seatbelt_available() -> bool:
 
 
 def _linux_bwrap_available() -> bool:
-    return platform.system() == "Linux" and shutil.which("bwrap") is not None
+    # prlimit enforces the process budget inside the namespace; without it bwrap is not offered (fail closed).
+    return platform.system() == "Linux" and shutil.which("bwrap") is not None and shutil.which("prlimit") is not None
 
 
 # Ordered by isolation strength / portability, not detection cost. Docker's

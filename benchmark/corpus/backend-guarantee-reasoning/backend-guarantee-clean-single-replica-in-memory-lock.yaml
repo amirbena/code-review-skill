@@ -1,0 +1,60 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. Clean: a process-local lock is enough when the deployment is a single instance.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-clean-single-replica-in-memory-lock
+title: "nightly_payout uses a threading.Lock in a deployment that runs one replica"
+
+input:
+  patch: |
+    diff --git a/app/scheduler.py b/app/scheduler.py
+    index 1111111..2222222 100644
+    --- a/app/scheduler.py
+    +++ b/app/scheduler.py
+    @@ -7,3 +7,10 @@
+         with _lock:
+             for account in ledger.open_accounts():
+                 ledger.apply_pending(account)
+    +
+    +
+    +def nightly_payout(ledger, payouts):
+    +    with _lock:
+    +        for payout in payouts.due():
+    +            payouts.send(payout)
+    +            payouts.mark_sent(payout)
+  base:
+    app/scheduler.py: |
+      import threading
+
+      _lock = threading.Lock()
+
+
+      def reconcile_balances(ledger):
+          with _lock:
+              for account in ledger.open_accounts():
+                  ledger.apply_pending(account)
+    deploy/billing-worker.yaml: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: billing-worker
+      spec:
+        replicas: 1
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Same code as the multi-replica case, but config shows replicas: 1, so the guarantee is established. Pins that a hypothetical scale-out risk is not reported.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

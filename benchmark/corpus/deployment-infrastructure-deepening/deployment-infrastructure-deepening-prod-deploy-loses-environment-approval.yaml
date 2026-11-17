@@ -1,0 +1,76 @@
+# Deployment/infrastructure-deepening corpus case (Issue #875, parent #740).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# CI/CD deploy-safety property: removing the environment binding drops the
+# required-reviewer gate that protected the production deploy.
+
+format: benchmark-case/v3
+
+id: deployment-infrastructure-deepening-prod-deploy-loses-environment-approval
+title: "release.yml removes the production environment from the deploy job"
+
+input:
+  patch: |
+    diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+    index 1111111..2222222 100644
+    --- a/.github/workflows/release.yml
+    +++ b/.github/workflows/release.yml
+    @@ -7,8 +7,7 @@ on:
+     jobs:
+       deploy:
+         runs-on: ubuntu-latest
+    -    environment: production
+         steps:
+           - uses: actions/checkout@8f4b7f84864484a7bde6b71ad9e3fda11d7d17f1 # v4.1.1
+           - name: Deploy to production
+             run: ./scripts/deploy.sh production
+  base:
+    .github/workflows/release.yml: |
+      name: Release
+
+      on:
+        push:
+          tags: ["v*"]
+
+      jobs:
+        deploy:
+          runs-on: ubuntu-latest
+          environment: production
+          steps:
+            - uses: actions/checkout@8f4b7f84864484a7bde6b71ad9e3fda11d7d17f1 # v4.1.1
+            - name: Deploy to production
+              run: ./scripts/deploy.sh production
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: production-environment-approval-removed
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: .github/workflows/release.yml
+        anchor: 'runs-on: ubuntu-latest'
+      claim: >-
+        The deploy job no longer declares environment: production, so any
+        environment protection rules, such as required reviewers, no longer
+        apply. Pushing a v* tag now runs ./scripts/deploy.sh production
+        with no approval step.
+      defect_kind: ci-deploy-environment-protection-removed
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs CI deploy-safety reasoning about environment protection."
+  source: crafted
+  tags: [regression]
+  rationale: >-
+    Pins the CI/CD deploy-safety subsection: the approval gate lives in
+    repository settings and is bound only by the removed line, so the
+    consequence is visible from the deleted binding.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [regression]
+    affected_surface: [unclassified]

@@ -32,8 +32,8 @@ _LAUNCH_FAILURES: dict[capability.Primitive, tuple[frozenset[int], re.Pattern[st
         re.compile(r"^sandbox-exec: execvp\(\) of '.*' failed: "),
     ),
     capability.Primitive.LINUX_BWRAP: (
-        frozenset({1}),
-        re.compile(r"^bwrap: execvp .+: "),
+        frozenset({1, 126, 127}),
+        re.compile(r"^(?:bwrap: execvp .+|prlimit: failed to execute .+): "),
     ),
     capability.Primitive.DOCKER: (
         frozenset({126, 127}),

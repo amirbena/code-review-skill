@@ -1,0 +1,48 @@
+# Benchmark corpus case (Issue #876): review-core Reuse rule.
+# Format: runtime_platform/benchmark/fixture-format.md.
+
+format: benchmark-case/v3
+
+id: duplication-reuse-clean-extraction-needs-flags
+title: "Near-duplicate exporters whose shared extraction would need flags"
+
+input:
+  patch: |
+    diff --git a/app/export_xml.py b/app/export_xml.py
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/app/export_xml.py
+    @@ -0,0 +1,8 @@
+    +def export_xml(rows):
+    +    out = ["<rows>"]
+    +    for r in rows:
+    +        if r.deleted:
+    +            continue
+    +        out.append("<row id='%s'/>" % r.id)
+    +    out.append("</rows>")
+    +    return "".join(out)
+  base:
+    app/export_csv.py: |
+      def export_csv(rows):
+          out = ["id"]
+          for r in rows:
+              out.append(str(r.id))
+          return "\n".join(out)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core]
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Different formats and filtering; one helper would need flags and branches.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

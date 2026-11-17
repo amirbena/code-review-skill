@@ -1,0 +1,60 @@
+# Deployment/infrastructure-deepening corpus case (Issue #875, parent #740).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Guard for the IaC lifecycle subsection: same rename, but a moved block
+# preserves the state address.
+
+format: benchmark-case/v3
+
+id: deployment-infrastructure-deepening-terraform-rename-with-moved-block-clean
+title: "db.tf renames the orders database resource label and adds a moved block"
+
+input:
+  patch: |
+    diff --git a/infra/db.tf b/infra/db.tf
+    index 1111111..2222222 100644
+    --- a/infra/db.tf
+    +++ b/infra/db.tf
+    @@ -1,7 +1,12 @@
+    -resource "aws_db_instance" "orders" {
+    +moved {
+    +  from = aws_db_instance.orders
+    +  to   = aws_db_instance.orders_primary
+    +}
+    +
+    +resource "aws_db_instance" "orders_primary" {
+       identifier          = "orders-prod"
+       engine              = "postgres"
+       instance_class      = "db.r6g.large"
+       allocated_storage   = 500
+       skip_final_snapshot = true
+     }
+  base:
+    infra/db.tf: |
+      resource "aws_db_instance" "orders" {
+        identifier          = "orders-prod"
+        engine              = "postgres"
+        instance_class      = "db.r6g.large"
+        allocated_storage   = 500
+        skip_final_snapshot = true
+      }
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Guard for IaC lifecycle reasoning."
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    The rename is made state-preserving by the moved block, so no
+    destroy/create follows and the reviewer must stay quiet.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

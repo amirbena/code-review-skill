@@ -26,7 +26,7 @@ either runs real code or guards a structural contract of the repository.
 | `integration/release/` | Coverage that exercises the release-worthiness PR boundary against real Git. |
 | `policy/benchmark/`, `policy/governance/`, `policy/release/` | Structural guards over workflows, routing and benchmark wiring (not prose): the CI test routing contract, the PR-description and release workflows, the benchmark publish workflow and its no-write guarantee, the benchmark root layout, and the instruction-routing structure. |
 | `repository/` | Repository-hygiene checks (`.gitignore`, `scripts/` staying subsystem-owned). |
-| `support/` | Shared test infrastructure: `paths.py` (the one canonical `REPO_ROOT`), `git_repo.py` (`isolate_git_config()` for modules that build throwaway Git repositories), `pr_publication_fake.py`, `benchmark_runtime.py` (the shared gate for tests that need the real benchmark review runtime; `BENCHMARK_REQUIRE_RUNTIME=1` makes a missing runtime an error instead of a skip), `corpus_hygiene.py`, and the benchmark publisher fakes. |
+| `support/` | Shared test infrastructure: `paths.py` (the one canonical `REPO_ROOT`), `git_repo.py` (`isolate_git_config()` for modules that build throwaway Git repositories), `pr_publication_fake.py`, `benchmark_runtime.py` (the shared gate for tests that need the real benchmark review runtime; live tests skip unless `BENCHMARK_RUN_LIVE=1`; `BENCHMARK_REQUIRE_RUNTIME=1` also opts in and makes a missing runtime an error instead of a skip), `corpus_hygiene.py`, and the benchmark publisher fakes. |
 
 Genuine developer scripts (packaging, metadata validation) live in
 [`../scripts/`](../scripts/), not here.

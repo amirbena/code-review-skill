@@ -10,6 +10,13 @@ does and **which behavior changes**: what a caller, user, operator or
 stored record sees before and after. Tests, configuration, migrations,
 schemas and documentation in the change are part of it.
 
+Then establish, independently, what the change must guarantee: the
+invariants and contracts it must keep, the entry points that reach it, and
+what its callers and consumers rely on, from the diff, the base code and
+any acceptance criteria. A PR description, commit message or earlier
+review says what the author intended or concluded. Check those claims
+against the code; they never replace that check.
+
 Start from the diff, then read enough of each changed file to judge every
 hunk in its context:
 
@@ -39,6 +46,52 @@ or config wiring and calls from other languages. When one of those may
 reach a changed contract and you could not check it, list it as not
 investigated.
 
+## Reuse
+
+Every review checks whether the change re-implements logic the
+repository already provides or copies logic maintained elsewhere, in any
+domain: code, UI, queries, policies, Helm, Terraform or workflow steps.
+It is part of the standing review, and most reviews report nothing.
+
+When the change adds a non-trivial function, validation, transformation,
+query, component logic, policy or config block, run one `git grep` for an
+existing equivalent and stop after about ten hits. A change that adds
+none of these needs no search.
+
+Report only when all of these hold:
+
+- the implementations have the same responsibility, not just a similar
+  shape;
+- a shared implementation already exists or is clearly appropriate;
+- the change introduces the duplication or materially worsens it;
+- code you read shows a concrete consequence: the copies already
+  disagree, a fix or rule exists in one copy only, a canonical validator
+  or policy is bypassed, or they diverge on a path that matters.
+
+Do not report different responsibilities, intentional isolation between
+components or services (including a documented decision or a repository
+with no shared package), small repetition, test setup where abstraction
+hurts readability, an extraction that adds more complexity than it
+removes, or speculative future divergence.
+
+Default to P2. Use P1 only when the copies already produce a wrong result
+under the credible-defect bar below, such as accepting input the canonical
+copy rejects.
+
+## Maintainability
+
+Correct behavior does not exempt the code from review. Report a P2 when
+the code you read shows a concrete, actionable cost: needless complexity
+or abstraction, avoidable duplication, unclear naming or control flow
+that hides intent, or inconsistency with the surrounding code, and say
+what a maintainer pays for it. No wrong-result input is needed for this;
+it stays P2 unless it also causes a defect.
+
+Do not report style taste, speculative future-proofing, a refactor that
+adds more complexity than it removes, or pre-existing code the change does
+not touch. A readable, maintainable change gets no maintainability
+finding; do not add one to show depth.
+
 ## Implication checklist
 
 For each behavior change, ask:
@@ -53,15 +106,24 @@ For each behavior change, ask:
   input handling, secrets or trust boundaries?
 - **Failure paths:** what happens on errors, timeouts, empty or missing
   values, retries and concurrent use?
+- **Reuse:** does the change re-implement logic the repository already
+  provides, or copy logic maintained elsewhere?
 - **Tests:** is the changed behavior tested, and do existing tests still
   describe the new behavior?
 
 The checklist points where to look. It is not a report section, and an
-item with nothing to say is skipped.
+item that does not apply to this change is skipped. Before the decision,
+confirm that every item that does apply was examined, ruled out by code
+you read, or listed as not investigated. This accounts for the concern;
+it does not widen the investigation.
 
 ## Bounded investigation
 
-When something looks wrong, investigate it before deciding:
+When something looks wrong, or a changed component plausibly interacts
+with unchanged code in a way the diff does not show, investigate before
+deciding. Explore the hypothesis freely; only what the code confirms
+becomes a finding. Depth follows the change's complexity and risk: a
+simple, low-risk change needs no more than the direct-reference check.
 
 1. Name the suspicion in one sentence: which input or state leads to
    which wrong result.
@@ -87,9 +149,17 @@ A candidate becomes a finding only when all of these hold:
   guard, a validator, a caller's precondition or a test;
 - it matters to behavior, safety, data or maintainability, not to taste.
 
+In the finding's `evidence`, say whether an existing entry point reaches
+the defect today and why the guards and tests you read do not prevent it.
+A defect no current path reaches is latent: report it only when the
+change makes it reachable or leaves a real trap, and rate it on its
+exposure, usually P2. Do not present a latent defect as active.
+
 Before keeping a candidate, look once for the reason it might be wrong:
 the guard elsewhere, the caller that never passes that value, the
-framework default. Drop it if that reason holds. Prefer no finding to a
+framework default. Drop it if that reason holds, and only after
+confirming it covers the specific input or failure path of the
+suspicion; a guard that does not cover that path does not dismiss it. Prefer no finding to a
 speculative one, but never drop a confirmed defect to keep a report
 short.
 

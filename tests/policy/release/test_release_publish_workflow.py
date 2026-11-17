@@ -26,7 +26,13 @@ is verified (#528).
 
 from __future__ import annotations
 
+import json
+import os
+import subprocess
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 import yaml
 
@@ -483,9 +489,39 @@ class FinalizationGateTests(unittest.TestCase):
         verify = _step(self.steps, "Verify the GitHub Release")["run"]
         for run in (create, verify):
             self.assertIn('--expected-sha "${SHA}"', run)
-            self.assertIn("--asset dist/local-code-review-skill.zip", run)
-            self.assertIn("--asset dist/github-pr-review-skill.zip", run)
+            self.assertIn("${SKILL_ASSET_ARGS}", run)
+            self.assertNotIn("--asset dist/", run, "archive names must come from the package manifest")
         self.assertIn("--main-ancestor", verify)
+
+    def test_release_assets_are_exactly_the_package_manifest_archives(self) -> None:
+        """create and verify share one asset set, and it is every manifest archive (v3 = eleven, not two)."""
+        step = _step(self.steps, "Resolve the canonical Skill archive set")
+        self.assertLess(
+            _step_index(self.steps, "Resolve the canonical Skill archive set"),
+            _step_index(self.steps, "Create or complete the GitHub Release"),
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "github_env"
+            env_file.touch()
+            shim = Path(tmp) / "bin"
+            shim.mkdir()
+            (shim / "python").symlink_to(sys.executable)  # CI's setup-python provides `python`
+            subprocess.run(
+                ["bash", "-e", "-c", step["run"]],
+                cwd=REPO_ROOT,
+                env={**os.environ, "GITHUB_ENV": str(env_file), "PATH": f"{shim}{os.pathsep}{os.environ['PATH']}"},
+                check=True,
+            )
+            line = env_file.read_text(encoding="utf-8").strip()
+        self.assertTrue(line.startswith("SKILL_ASSET_ARGS="), line)
+        resolved = line.removeprefix("SKILL_ASSET_ARGS=").split()
+        self.assertEqual(resolved[::2], ["--asset"] * (len(resolved) // 2))
+        manifest = json.loads((REPO_ROOT / "scripts" / "packaging" / "package-manifest.json").read_text("utf-8"))
+        expected = sorted(f"dist/{skill['archive']}" for skill in manifest["skills"].values())
+        self.assertEqual(sorted(resolved[1::2]), expected)
+        self.assertGreater(len(expected), 2)
+
+    def test_finalize_env_is_bound_to_the_distribute_outputs(self) -> None:
         env = _step(self.steps, "Create or complete the GitHub Release")["env"]
         self.assertEqual(env["SHA"], "${{ needs.distribute.outputs.sha }}")
         self.assertEqual(env["VERSION"], "${{ needs.distribute.outputs.version }}")

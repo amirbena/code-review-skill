@@ -1,0 +1,63 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. Clean: a mock is accompanied by an integration test against the real store.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-clean-mock-backed-by-contract-test
+title: "claim_slot is mock-tested and also covered by an integration test against a real store"
+
+input:
+  patch: |
+    diff --git a/app/slots.py b/app/slots.py
+    index 1111111..2222222 100644
+    --- a/app/slots.py
+    +++ b/app/slots.py
+    @@ -1,3 +1,11 @@
+     def put_if_absent(client, table, key, item):
+         client.put_item(TableName=table, Item=item, ConditionExpression="attribute_not_exists(pk)")
+         return True
+    +
+    +
+    +def claim_slot(client, table, key, owner):
+    +    try:
+    +        client.put_item(TableName=table, Item={"pk": key, "owner": owner}, ConditionExpression="attribute_not_exists(pk)")
+    +        return True
+    +    except client.exceptions.ConditionalCheckFailedException:
+    +        return False
+  base:
+    app/slots.py: |
+      def put_if_absent(client, table, key, item):
+          client.put_item(TableName=table, Item=item, ConditionExpression="attribute_not_exists(pk)")
+          return True
+    tests/test_slots.py: |
+      from unittest import mock
+
+      from app import slots
+
+
+      def test_claim_slot_returns_false_when_taken():
+          client = mock.Mock()
+          client.exceptions.ConditionalCheckFailedException = KeyError
+          client.put_item.side_effect = KeyError()
+          assert slots.claim_slot(client, "t", "k", "o") is False
+    tests/integration/test_slots_real_store.py: |
+      def test_second_claim_is_rejected(real_store):
+          assert slots.claim_slot(real_store, 't', 'k', 'a') is True
+          assert slots.claim_slot(real_store, 't', 'k', 'b') is False
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    The conditional-write behaviour is shown against a real store by an integration test in the repo, so the mock gap case does not apply.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

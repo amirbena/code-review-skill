@@ -645,6 +645,21 @@ jobs:
           name: distribution-rebuild
           path: dist
 
+      # One canonical archive set for create/complete AND verify: every Skill the
+      # package manifest declares (v3 ships eleven; a hardcoded pair shipped two).
+      # A missing build archive fails closed in both steps.
+      - name: Resolve the canonical Skill archive set from the package manifest
+        run: |
+          python - <<'PY' >> "$GITHUB_ENV"
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, "scripts/release")
+          from release_lib.skill_version import skill_targets
+
+          print("SKILL_ASSET_ARGS=" + " ".join(f"--asset dist/{archive}" for _, archive in skill_targets(Path("."))))
+          PY
+
       - name: Create or complete the GitHub Release (idempotent, fails closed on mismatch)
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -658,8 +673,7 @@ jobs:
             --version "${VERSION}" \
             --expected-sha "${SHA}" \
             --notes-file release-notes.md \
-            --asset dist/local-code-review-skill.zip \
-            --asset dist/github-pr-review-skill.zip
+            ${SKILL_ASSET_ARGS}
 
       - name: Verify the GitHub Release, tag, and main ancestry
         env:
@@ -671,8 +685,7 @@ jobs:
             --version "${VERSION}" \
             --expected-sha "${SHA}" \
             --main-ancestor \
-            --asset dist/local-code-review-skill.zip \
-            --asset dist/github-pr-review-skill.zip
+            ${SKILL_ASSET_ARGS}
 
       - name: Release summary
         env:
@@ -684,5 +697,5 @@ jobs:
             echo
             echo "- order: publish (source tag) → distribute (verified) → finalize"
             echo "- source commit: \`${SHA}\`"
-            echo "- GitHub Release published with both Skill archives, digests verified against the distributed build"
+            echo "- GitHub Release published with every Skill archive in the package manifest, digests verified against the distributed build"
           } >> "$GITHUB_STEP_SUMMARY"

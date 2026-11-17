@@ -1,6 +1,6 @@
 # review-backend
 
-Backend depth: API contracts, databases and migrations, concurrency, performance, deployment and config.
+Backend depth: API contracts, databases and migrations, concurrency, performance, deployment and config, including IaC, Kubernetes/Helm and CI/CD.
 
 **Ask for it like this**
 

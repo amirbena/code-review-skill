@@ -1,0 +1,61 @@
+# Benchmark corpus case (Issue #876): review-core Reuse rule.
+# Format: runtime_platform/benchmark/fixture-format.md.
+
+format: benchmark-case/v3
+
+id: duplication-reuse-frontend-formatter-one-copy-fixed-p2
+title: "New InvoiceRow re-implements the useCurrency formatting hook"
+
+input:
+  patch: |
+    diff --git a/web/InvoiceRow.tsx b/web/InvoiceRow.tsx
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/web/InvoiceRow.tsx
+    @@ -0,0 +1,4 @@
+    +export function InvoiceRow({ cents }: { cents: number }) {
+    +  const label = "$" + (cents / 100).toFixed(2);
+    +  return <span>{label}</span>;
+    +}
+  base:
+    web/useCurrency.ts: |
+      // Fixed in #412: negative amounts render as -$1.00, not $-1.00.
+      export function useCurrency(cents: number): string {
+        const sign = cents < 0 ? "-" : "";
+        return sign + "$" + (Math.abs(cents) / 100).toFixed(2);
+      }
+    web/CartTotal.tsx: |
+      import { useCurrency } from "./useCurrency";
+
+      export function CartTotal({ cents }: { cents: number }) {
+        return <b>{useCurrency(cents)}</b>;
+      }
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: reimplemented-currency-formatter
+      match: required
+      severity: P2
+      location:
+        location_intent: symbol
+        path: web/InvoiceRow.tsx
+        symbol: InvoiceRow
+        anchor: 'const label = "$" + (cents / 100).toFixed(2);'
+      claim: >-
+        InvoiceRow formats currency inline instead of using the existing useCurrency hook, and the sign fix made in useCurrency (#412) is missing from this copy, so refunds render as $-1.00 here and -$1.00 in CartTotal.
+      defect_kind: duplicated-logic
+
+metadata:
+  skill_set: [review-core]
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Equivalent formatting logic copied from a hook that already received a later fix; the copies already disagree, so one P2 is expected.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

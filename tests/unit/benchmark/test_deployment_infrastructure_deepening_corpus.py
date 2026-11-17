@@ -23,12 +23,17 @@ FLAGGED_CASE_IDS = {
     PREFIX + "workflow-permissions-widened",
     PREFIX + "smoke-test-failure-no-longer-gates-deploy",
     PREFIX + "helm-value-key-renamed-template-unresolved",
+    PREFIX + "terraform-rename-without-moved-recreates-database",
+    PREFIX + "rolebinding-widened-to-cluster-admin",
+    PREFIX + "prod-deploy-loses-environment-approval",
 }
 CLEAN_CASE_IDS = {
     PREFIX + "memory-limit-raise-consistent-clean",
     PREFIX + "db-resize-impact-needs-plan-output",
     PREFIX + "comment-and-unused-label-edit-not-activated-clean",
     PREFIX + "dockerfile-from-only-boundary-clean",
+    PREFIX + "terraform-rename-with-moved-block-clean",
+    PREFIX + "scoped-role-added-clean",
 }
 GAP_CASE = PREFIX + "db-resize-impact-needs-plan-output"
 NON_ACTIVATION_CASE = PREFIX + "comment-and-unused-label-edit-not-activated-clean"
@@ -106,8 +111,8 @@ class SubCorpusCoverageTests(unittest.TestCase):
 
 class DeploymentInfrastructureDeepeningCorpusHygieneTests(CorpusHygieneMixin, unittest.TestCase):
     corpus_dir = CORPUS_DIR
-    min_cases = 8
-    max_cases = 10
+    min_cases = 13
+    max_cases = 15
 
 
 if __name__ == "__main__":

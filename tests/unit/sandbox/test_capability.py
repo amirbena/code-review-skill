@@ -43,6 +43,14 @@ class DetectPrimitiveTests(unittest.TestCase):
 
 
 class ProbeFunctionTests(unittest.TestCase):
+    def test_bwrap_needs_prlimit_for_the_process_budget(self) -> None:
+        for present, expected in (({"bwrap", "prlimit"}, True), ({"bwrap"}, False), ({"prlimit"}, False)):
+            with self.subTest(present=sorted(present)):
+                with mock.patch("platform.system", return_value="Linux"), mock.patch(
+                    "shutil.which", side_effect=lambda name: f"/usr/bin/{name}" if name in present else None
+                ):
+                    self.assertEqual(capability._linux_bwrap_available(), expected)
+
     def test_docker_unavailable_when_binary_missing(self) -> None:
         with mock.patch("shutil.which", return_value=None):
             self.assertFalse(capability._docker_available())

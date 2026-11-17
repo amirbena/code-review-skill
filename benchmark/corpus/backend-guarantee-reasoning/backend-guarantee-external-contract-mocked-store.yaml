@@ -1,0 +1,70 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. External-dependency contract: single-owner behaviour is shown only by a mock of a store.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-external-contract-mocked-store
+title: "claim_slot depends on conditional-write behaviour that only a hand-built mock demonstrates"
+
+input:
+  patch: |
+    diff --git a/app/slots.py b/app/slots.py
+    index 1111111..2222222 100644
+    --- a/app/slots.py
+    +++ b/app/slots.py
+    @@ -1,3 +1,11 @@
+     def put_if_absent(client, table, key, item):
+         client.put_item(TableName=table, Item=item, ConditionExpression="attribute_not_exists(pk)")
+         return True
+    +
+    +
+    +def claim_slot(client, table, key, owner):
+    +    try:
+    +        client.put_item(TableName=table, Item={"pk": key, "owner": owner}, ConditionExpression="attribute_not_exists(pk)")
+    +        return True
+    +    except client.exceptions.ConditionalCheckFailedException:
+    +        return False
+  base:
+    app/slots.py: |
+      def put_if_absent(client, table, key, item):
+          client.put_item(TableName=table, Item=item, ConditionExpression="attribute_not_exists(pk)")
+          return True
+    tests/test_slots.py: |
+      from unittest import mock
+
+      from app import slots
+
+
+      def test_claim_slot_returns_false_when_taken():
+          client = mock.Mock()
+          client.exceptions.ConditionalCheckFailedException = KeyError
+          client.put_item.side_effect = KeyError()
+          assert slots.claim_slot(client, "t", "k", "o") is False
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: conditional-write-claim-only-mock-backed
+      match: required
+      severity: P2
+      location:
+        location_intent: line
+        path: app/slots.py
+        symbol: claim_slot
+        anchor: 'except client.exceptions.ConditionalCheckFailedException:'
+      claim: >-
+        claim_slot relies on the store rejecting a second conditional put so that only one owner wins. The only evidence is tests/test_slots.py, where client.put_item is a Mock that raises the expected error. No integration test or contract in the repo shows the real store does this, so the guarantee is untested. This is a test gap rather than a demonstrated defect, so P2.
+      defect_kind: external-contract-established-only-by-mock
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    External contract with a key-value store, shown only by a mock. Severity stays P2 because no production defect is demonstrated, as the issue's severity section requires.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

@@ -1,0 +1,51 @@
+# Backend guarantee-reasoning corpus case (Issue #874). See ./README.md. Clean: stored state is version-checked and an incompatible checkpoint restarts from zero.
+
+format: benchmark-case/v3
+
+id: backend-guarantee-clean-version-checked-with-recovery
+title: "projection bumps SCHEMA_VERSION and read_state discards checkpoints from other versions"
+
+input:
+  patch: |
+    diff --git a/app/projection.py b/app/projection.py
+    index 1111111..2222222 100644
+    --- a/app/projection.py
+    +++ b/app/projection.py
+    @@ -1,4 +1,4 @@
+    -SCHEMA_VERSION = 1
+    +SCHEMA_VERSION = 2
+     
+     
+     def read_state(store):
+  base:
+    app/projection.py: |
+      SCHEMA_VERSION = 1
+
+
+      def read_state(store):
+          raw = store.get("projection-state")
+          if raw is None or raw.get("schema") != SCHEMA_VERSION:
+              return 0
+          return raw["last_event_id"]
+
+
+      def write_state(store, last_event_id):
+          store.put("projection-state", {"schema": SCHEMA_VERSION, "last_event_id": last_event_id})
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs backend guarantee reasoning over code and config."
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Unlike the unchecked version-marker case, read_state compares the stored schema and recovers by replaying from 0, so compatibility with stored data is established.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

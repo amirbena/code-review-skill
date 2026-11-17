@@ -60,6 +60,26 @@ class LinuxBwrapArgvTests(unittest.TestCase):
         self.assertEqual(argv[bind_index + 1], str(self.workspace.work_copy.resolve()))
         self.assertEqual(argv[bind_index + 2], "/workspace")
 
+    def test_root_is_remounted_read_only_after_every_mount_and_before_the_command(self) -> None:
+        extra = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, extra, True)
+        request = SandboxRequest(
+            argv=("payload",), source_dir=self.source, read_only_inputs=(extra,), limits=SandboxLimits()
+        )
+        argv = self._run(request)[0][0]
+        remount = argv.index("--remount-ro")
+        self.assertEqual(argv[remount + 1], "/")
+        mounts = [i for i, a in enumerate(argv) if a in ("--bind", "--ro-bind", "--tmpfs", "--proc", "--dev")]
+        self.assertTrue(all(i < remount for i in mounts))
+        self.assertLess(remount, argv.index("payload"))
+
+    def test_process_budget_is_set_inside_the_namespace_around_the_payload(self) -> None:
+        request = SandboxRequest(
+            argv=("payload", "-x"), source_dir=self.source, limits=SandboxLimits(max_processes=25)
+        )
+        argv = self._run(request)[0][0]
+        self.assertEqual(list(argv[-5:]), ["prlimit", "--nproc=25", "--", "payload", "-x"])
+
     def test_read_only_inputs_are_ro_bound(self) -> None:
         extra = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, extra, True)

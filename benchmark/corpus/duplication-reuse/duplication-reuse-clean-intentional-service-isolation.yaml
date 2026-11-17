@@ -1,0 +1,43 @@
+# Benchmark corpus case (Issue #876): review-core Reuse rule.
+# Format: runtime_platform/benchmark/fixture-format.md.
+
+format: benchmark-case/v3
+
+id: duplication-reuse-clean-intentional-service-isolation
+title: "Per-service copy where the repo documents intentional isolation"
+
+input:
+  patch: |
+    diff --git a/services/search/retry.py b/services/search/retry.py
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/services/search/retry.py
+    @@ -0,0 +1,2 @@
+    +def backoff(attempt):
+    +    return min(30, 2 ** attempt)
+  base:
+    services/billing/retry.py: |
+      def backoff(attempt):
+          return min(30, 2 ** attempt)
+    docs/adr-007.md: |
+      # ADR 007
+
+      Services do not share code. Each service owns its own copy of small helpers such as retry backoff so they deploy and version independently.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  skill_set: [review-core]
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Documented decision for isolation between services; no finding.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

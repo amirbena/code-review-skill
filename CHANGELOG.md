@@ -18,6 +18,42 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v3.5.0 — 2026-11-16
+
+### Changed
+
+- Review reasoning now establishes what a change must guarantee, explores interaction hypotheses with risk-proportionate depth, and states whether a defect is reached today or latent (#888).
+
+## v3.4.0 — 2026-11-16
+
+### Changed
+
+- Review rules no longer let PR framing defer explicit requirements, allow concrete maintainability findings on correct code, and qualify REVIEW CLEAN when non-blocking findings or unmet requirements exist (#886).
+
+## v3.3.1 — 2026-11-11
+
+### Fixed
+
+- review-core now accounts for applicable checklist areas before the decision and verifies a guard covers the failure path before dismissing a candidate (#883).
+
+## v3.3.0 — 2026-11-11
+
+### Changed
+
+- review-backend now reviews infrastructure-only changes with IaC lifecycle, Kubernetes/Helm privilege and CI/CD deploy-safety prompts (#881).
+
+## v3.2.0 — 2026-11-10
+
+### Changed
+
+- `review-backend` now reasons from the guarantees a change relies on (coordination, persisted state, lifecycle, external contracts) instead of a per-shape concurrency list (#879).
+
+## v3.1.0 — 2026-11-10
+
+### Changed
+
+- Review Core now checks every change for unjustified duplication or reimplementation of existing logic, reporting it only when equivalent and evidenced (#877).
+
 ## v3.0.0 — 2026-11-05
 
 ### Breaking

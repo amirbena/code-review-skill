@@ -91,6 +91,8 @@ class SandboxRunnerTests(unittest.TestCase):
              "sandbox-exec: execvp() of 'pytest' failed: No such file or directory\n"),
             (capability.Primitive.LINUX_BWRAP, 1,
              "bwrap: execvp pytest: No such file or directory\n"),
+            (capability.Primitive.LINUX_BWRAP, 127,
+             "prlimit: failed to execute pytest: No such file or directory\n"),
             (capability.Primitive.DOCKER, 127,
              'docker: Error response from daemon: failed to create task for container: '
              'exec: "pytest": executable file not found in $PATH: unknown.\n'),
