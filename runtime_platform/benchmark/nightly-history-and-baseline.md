@@ -382,7 +382,7 @@ reason rather than by default:
   synthesis this document does not (and should not) invent.
 
 A **pinned, deliberately-refreshed baseline** needs none of that: it never
-moves on its own, so there is nothing to ratchet, and once #339 exists it
+moves on its own, so there is nothing to ratchet, and now that #339 exists it
 can compare every nightly run against the same fixed reference until a
 maintainer reviews the accumulated deltas and consciously promotes a new
 one — precisely the model `regression-report.md` §8 already establishes

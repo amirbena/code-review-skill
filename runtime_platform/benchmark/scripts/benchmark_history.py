@@ -60,7 +60,7 @@ def corpus_digest(corpus_dir: Path) -> str:
     """regression-report.md §2's `corpus_id`: every fixture id + a content digest.
 
     Mirrors `runtime_platform/benchmark/reference/benchmark_report.py::corpus_digest`
-    (test-only) so values computed here are directly comparable once #339
+    (test-only) so values computed here are directly comparable now that #339
     installs that report against real history.
     """
     h = hashlib.sha256()
