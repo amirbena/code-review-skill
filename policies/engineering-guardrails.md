@@ -129,10 +129,10 @@ clean result.
 
 - Review every relevant category of the delta that will be committed, not an
   earlier one; the staged-delta fingerprint identifies the staged category only.
-- Absence of findings is not evidence of correctness, and a review that has not
-  completed required coverage reports `REVIEW INCOMPLETE`, never clean
-  (#784: a report rendered "Review Clean" while its own metadata said
-  `Coverage: incomplete`).
+- Absence of findings is not evidence of correctness, and a review in which
+  any of the four closed `REVIEW INCOMPLETE` triggers in `findings.md`
+  applied reports `REVIEW INCOMPLETE`, never clean (#784: a report rendered
+  "Review Clean" while its own metadata said `Coverage: incomplete`).
 - Do not bypass an approval gate or a stopping criterion to reach a clean
   result. Every review run still needs the user's own request.
 - Canonical:

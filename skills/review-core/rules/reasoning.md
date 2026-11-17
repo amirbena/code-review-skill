@@ -53,6 +53,11 @@ repository already provides or copies logic maintained elsewhere, in any
 domain: code, UI, queries, policies, Helm, Terraform or workflow steps.
 It is part of the standing review, and most reviews report nothing.
 
+Reuse owns logic that already exists, or is maintained, elsewhere in the
+repository. Repetition inside the change itself, such as a new branch
+repeating a statement from a sibling branch, is judged under
+"Maintainability", not here.
+
 When the change adds a non-trivial function, validation, transformation,
 query, component logic, policy or config block, run one `git grep` for an
 existing equivalent and stop after about ten hits. A change that adds
@@ -82,10 +87,10 @@ copy rejects.
 
 Correct behavior does not exempt the code from review. Report a P2 when
 the code you read shows a concrete, actionable cost: needless complexity
-or abstraction, avoidable duplication, unclear naming or control flow
-that hides intent, or inconsistency with the surrounding code, and say
-what a maintainer pays for it. No wrong-result input is needed for this;
-it stays P2 unless it also causes a defect.
+or abstraction, avoidable repetition inside the change, unclear naming or
+control flow that hides intent, or inconsistency with the surrounding
+code, and say what a maintainer pays for it. No wrong-result input is
+needed for this; it stays P2 unless it also causes a defect.
 
 Do not report style taste, speculative future-proofing, a refactor that
 adds more complexity than it removes, or pre-existing code the change does
@@ -144,9 +149,14 @@ A candidate becomes a finding only when all of these hold:
 
 - it is caused or exposed by this change, not a pre-existing issue the
   change does not touch;
-- a concrete input, state or sequence leads to the wrong result;
+- for a correctness defect, a concrete input, state or sequence leads to
+  the wrong result; for a test gap, misleading documentation or a
+  maintainability cost, the code you read shows a concrete, demonstrable
+  cost or risk, and no wrong-result input is needed;
 - the code you read shows it, and nothing you read prevents it, such as a
-  guard, a validator, a caller's precondition or a test;
+  guard, a validator, a caller's precondition or a test. A passing test
+  prevents it only after you have read what it asserts and found that it
+  covers the specific input or path;
 - it matters to behavior, safety, data or maintainability, not to taste.
 
 In the finding's `evidence`, say whether an existing entry point reaches

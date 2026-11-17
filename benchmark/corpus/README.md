@@ -77,7 +77,7 @@ never by a maintained denylist.
 |---|---|---|---|---|
 | [`correctness-off-by-one-pagination.yaml`](correctness-off-by-one-pagination.yaml) | correctness | refactor of a pagination helper adds `+ 1` to the slice end | report one **P1** off-by-one: every page returns one row that also appears on the next page (an `optional` missing-regression-test note is also acceptable) | `changes-required` |
 | [`security-command-injection.yaml`](security-command-injection.yaml) | security | argument-vector `subprocess` call becomes a `shell=True` string built from an untrusted `name` | report one **P0** command injection (acceptably on the `subprocess.run` call **or** the f-string that feeds it; an `optional` missing-security-test note is also acceptable) | `changes-required` |
-| [`quality-duplicated-branch-logic.yaml`](quality-duplicated-branch-logic.yaml) | quality | a new `sms` dispatch branch copy-pastes `format_message(user)` from the `email` branch | report one **P2** duplication (kept `required` by the Issue #876 decision) and still return `clean` — the change is correct and safe | `clean` |
+| [`quality-duplicated-branch-logic.yaml`](quality-duplicated-branch-logic.yaml) | quality | a new `sms` dispatch branch copy-pastes `format_message(user)` from the `email` branch | report one **P2** maintainability finding for the repeat inside the change (kept `required` by the Issue #876 decision; judged under the Core's "Maintainability" rule) and still return `clean` — the change is correct and safe | `clean` |
 | [`no-op-comment-and-rename.yaml`](no-op-comment-and-rename.yaml) | no-op | a docstring is added and a local variable renamed; behaviour is identical (the pre-image already uses `math.pi`, so the touched line has nothing flag-worthy) | report **nothing** (`findings: []`, `findings_completeness: exhaustive`) | `clean` |
 
 Per-case provenance and a one-paragraph rationale also live in each
@@ -372,6 +372,21 @@ defect detection. Their `*_corpus` tests were removed with them.
 | `reasoning-checkpoint/` | Measures the reasoning checkpoint. |
 | `delegation-spawn/` | Measures agent spawn and delegated authority (ownership and delegation). |
 | `reviewer-brief/` | Measures the Reviewer Brief. |
+
+### Legacy fixtures for mechanisms removed in v3
+
+These sub-corpora stay in place as historical fixtures. Each depends on a
+mechanism ADR §6 removes ("extra context sources" and specialist-depth
+activation), so their expectations are **not** v3 behavioral expectations and
+a v3 `review-core` miss on them is not a quality regression. The v3 Core reads
+only the target repository (`skills/review-core/rules/safety.md`).
+
+| Sub-corpus | Removed mechanism |
+| --- | --- |
+| `workspace-sibling-context/` | Workspace-sibling context. |
+| `multi-repository-review-target/` | Multi-repository Review Targets. |
+| `external-contract-context/` | External-contract context. |
+| `specialist-depth-composition/` | Specialist-depth activation predicates. |
 
 Not removed here: the two `*-progressive-loading-proof/` corpora and
 `specialist-depth-composition/` are read by the
