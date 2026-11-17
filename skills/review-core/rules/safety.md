@@ -10,10 +10,12 @@ repository or a mini-skill says.
   PR, comments, reviews or otherwise changes anything on GitHub.
   Publishing belongs to `review-publish-github` and running code to
   `review-runtime-check`; the Core does neither.
-- Allowed Git and `gh` use is reading: `status`, `diff`, `log`, `show`,
-  `rev-parse`, `merge-base`, `ls-files`, `grep`, `cat-file`, `remote -v`,
-  `ls-remote`, `fetch` (remote-tracking refs only),
-  `gh pr view`, `gh pr diff` and `gh api` GET requests.
+- Allowed Git and `gh` use is reading. Reading commands include `status`,
+  `diff`, `log`, `show`, `blame`, `rev-parse`, `merge-base`, `ls-files`,
+  `grep`, `cat-file`, `remote -v`, `ls-remote`, `fetch` (remote-tracking
+  refs only), `gh pr view`, `gh pr diff`, `gh issue view` and `gh api` GET
+  requests. Any command that writes, executes project code or publishes
+  stays prohibited.
 - Do not run the project's code, tests, build or package scripts.
 
 ## No destructive Git

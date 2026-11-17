@@ -16,5 +16,6 @@ shown. Not packaged; consumed by the test suite and benchmark harness.
 | `duplication-reuse-clean-*.yaml` (5) | different responsibilities, documented isolation, test setup, two-line repeat, extraction needing flags | no finding |
 
 `../quality-duplicated-branch-logic.yaml` keeps its required P2 (Issue #876
-decision): a same-function branch repeat with a one-step hoist, which
-the Reuse rule does not exclude.
+decision): a same-function branch repeat with a one-step hoist. It is
+repetition inside the change, so the Core's "Maintainability" rule owns it,
+not "Reuse".
